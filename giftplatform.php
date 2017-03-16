@@ -1,8 +1,8 @@
 <?php
 /**
- * Plugin Name:       GIFT platform
+ * Plugin Name:       GIFT platform plugin
  * Plugin URI:        https://github.com/growlingfish/giftplatform
- * Description:       GIFT project digital gifting platform
+ * Description:       WordPress admin and server for GIFT project digital gifting platform
  * Version:           0.0.0.1
  * Author:            Ben Bedwell
  * License:           GNU General Public License v3
