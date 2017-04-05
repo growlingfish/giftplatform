@@ -3,7 +3,7 @@
  * Plugin Name:       GIFT platform plugin
  * Plugin URI:        https://github.com/growlingfish/giftplatform
  * Description:       WordPress admin and server for GIFT project digital gifting platform
- * Version:           0.0.0.3
+ * Version:           0.0.0.4
  * Author:            Ben Bedwell
  * License:           GNU General Public License v3
  * License URI:       http://www.gnu.org/licenses/gpl-3.0.html
@@ -83,8 +83,8 @@ function render_wrap_geo_meta_box ( $post ) { ?>
 		}
 
 		google.maps.event.addListener(drawingManager, 'overlaycomplete', function(event) {
-			google.maps.data.forEach (function (feature) { // only show one shape at a time
-				google.maps.data.remove(feature);
+			map.data.forEach (function (feature) { // only show one shape at a time
+				map.data.remove(feature);
 			});
 				
 			switch (event.type) {
