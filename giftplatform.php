@@ -3,7 +3,7 @@
  * Plugin Name:       GIFT platform plugin
  * Plugin URI:        https://github.com/growlingfish/giftplatform
  * Description:       WordPress admin and server for GIFT project digital gifting platform
- * Version:           0.0.0.4
+ * Version:           0.0.0.5
  * Author:            Ben Bedwell
  * License:           GNU General Public License v3
  * License URI:       http://www.gnu.org/licenses/gpl-3.0.html
@@ -44,8 +44,8 @@ function render_wrap_geo_meta_box ( $post ) { ?>
 <div id="wrap_geo_meta_box_map" style="width: 100%; height: 400px;"></div>
 <script>	
 	jQuery(document).ready(function( $ ) {
-		var currentShape;
-
+		var displayMarker;
+		
 		// display blank map
 		var map = new google.maps.Map(
 			document.getElementById('wrap_geo_meta_box_map'), {
@@ -73,8 +73,12 @@ function render_wrap_geo_meta_box ( $post ) { ?>
 
 		if (jQuery('#acf-field-place').val()) {
 			try {
-				map.data.add({geometry:
-					new google.maps.Data.Point(jQuery('#acf-field-place').val())
+				var point = new google.maps.Data.Point(
+					JSON.parse(jQuery('#acf-field-place').val())
+				);
+				displayMarker = new google.maps.Marker({
+				  	position: point.get(),
+				  	map: map
 				});
 			} catch (e) { // JSON syntax error
 				console.log('Bad JSON syntax in ACF field Place: ' + jQuery('#acf-field-place').val());
@@ -83,14 +87,14 @@ function render_wrap_geo_meta_box ( $post ) { ?>
 		}
 
 		google.maps.event.addListener(drawingManager, 'overlaycomplete', function(event) {
-			map.data.forEach (function (feature) { // only show one shape at a time
-				map.data.remove(feature);
-			});
-				
+			if (typeof displayMarker !== "undefined") {
+				displayMarker.setMap(null);
+			}
+							
 			switch (event.type) {
 				case google.maps.drawing.OverlayType.MARKER:
-					var point = new google.maps.Data.Point({lat: event.overlay.getPosition().lat(), lng: event.overlay.getPosition().lng()});
-					jQuery('#acf-field-place').val(point.get().toJSON());
+					displayMarker = event.overlay;
+					jQuery('#acf-field-place').val(JSON.stringify(displayMarker.getPosition()));
 					break;
 			}
 		});
