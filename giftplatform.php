@@ -31,7 +31,7 @@ add_action( 'admin_enqueue_scripts', 'giftplatform_enqueue_admin' );
 function adding_custom_meta_boxes_wrap ( $post ) {
     add_meta_box( 
         'wrap_geo_meta_box',
-        __( 'Geotag' ),
+        __( 'Place' ),
         'render_wrap_geo_meta_box',
         'wrap',
         'advanced',
