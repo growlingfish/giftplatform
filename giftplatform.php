@@ -18,6 +18,81 @@ register_activation_hook( __FILE__, 'giftplatform_activate' );
 function giftplatform_activate () {
 	flush_rewrite_rules();
 }
+
+/*
+*	Place in Wrap custom post type
+*/
+
+function adding_custom_meta_boxes_wrap ( $post ) {
+    add_meta_box( 
+        'wrap_geo_meta_box',
+        __( 'Geotag' ),
+        'render_wrap_geo_meta_box',
+        'wrap',
+        'advanced',
+        'high'
+    );
+}
+add_action( 'add_meta_boxes_wrap', 'adding_custom_meta_boxes_wrap' );
+
+function render_wrap_geo_meta_box ( $post ) { ?>
+<div id="wrap_geo_meta_box_map" style="width: 100%; height: 400px;"></div>
+<script>	
+	jQuery(document).ready(function( $ ) {
+		var currentShape;
+
+		// display blank map
+		var map = new google.maps.Map(
+			document.getElementById('wrap_geo_meta_box_map'), {
+				center: {lat: 52.938597, lng: -1.195291},
+				zoom: 15
+			}
+		);
+
+		// show drawing manager
+		var drawingManager = new google.maps.drawing.DrawingManager({
+			drawingMode: google.maps.drawing.OverlayType.MARKER,
+			drawingControl: true,
+			drawingControlOptions: {
+				position: google.maps.ControlPosition.TOP_CENTER,
+				drawingModes: [
+					google.maps.drawing.OverlayType.MARKER
+				]
+			},
+			markerOptions: {
+				clickable: false,
+				editable: false
+			}
+		});
+		drawingManager.setMap(map);
+
+		if (jQuery('#acf-field-place').val()) {
+			try {
+				map.data.add({geometry:
+					new google.maps.Data.Point(jQuery('#acf-field-place').val())
+				});
+			} catch (e) { // JSON syntax error
+				console.log('Bad JSON syntax in ACF field Place: ' + jQuery('#acf-field-place').val());
+				jQuery('#acf-field-place').val('');
+			}
+		}
+
+		google.maps.event.addListener(drawingManager, 'overlaycomplete', function(event) {
+			google.maps.data.forEach (function (feature) { // only show one shape at a time
+				google.maps.data.remove(feature);
+			});
+				
+			switch (event.type) {
+				case google.maps.drawing.OverlayType.MARKER:
+					var point = new google.maps.Data.Point({lat: event.overlay.getPosition().lat(), lng: event.overlay.getPosition().lng()});
+					jQuery('#acf-field-place').val(point.get().toJSON());
+					break;
+			}
+		});
+	});
+</script>
+<?php	
+}
  
 /*
 *	Simplify
