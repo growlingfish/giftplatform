@@ -9,7 +9,6 @@
 	  "reference": "origin/master"
         },
 	"require": {
-          "php": ">=5.3.2",
-    	  "composer/installers": "v1.3.0"
+          "php": ">=5.3.2"
 	}
 }
