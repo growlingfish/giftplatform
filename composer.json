@@ -5,7 +5,8 @@
         "type": "wordpress-plugin",
         "source": {
           "type": "git",
-          "url": "https://github.com/growlingfish/giftplatform.git"
+          "url": "https://github.com/growlingfish/giftplatform.git",
+	  "reference": "origin/master"
         },
         "require" : {
           "composer/installers": "v1.0.16"
