@@ -1,6 +1,5 @@
 {
-      "type": "package",
-      "package": {
+
         "name": "growlingfish/giftplatform",
         "version": "master",
         "type": "wordpress-plugin",
@@ -11,5 +10,4 @@
         "require" : {
           "composer/installers": "v1.0.16"
         }
-      }
     }
