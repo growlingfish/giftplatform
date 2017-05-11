@@ -4,8 +4,7 @@
         "version": "0.0.0.7",
         "type": "wordpress-plugin",
         "source": {
-          "type": "git",
-          "url": "https://github.com/growlingfish/giftplatform.git",
-	  "reference": "master"
+          "type": "vcs",
+          "url": "https://github.com/growlingfish/giftplatform.git"
         }
 }
