@@ -1,7 +1,7 @@
 {
 
         "name": "growlingfish/giftplatform",
-        "version": "master",
+        "version": "0.0.0.6",
         "type": "wordpress-plugin",
         "source": {
           "type": "git",
