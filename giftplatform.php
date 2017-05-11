@@ -135,7 +135,12 @@ function gift_register_api_hooks () {
 function gift_auth ($request) {
 	$user = get_user_by('email', $request['user']);
 
-	$response = new WP_REST_Response( $user->data->user_nicename );
+	$result = array(
+		'name' => $user->data->user_nicename,
+		'success' => true
+	);
+
+	$response = new WP_REST_Response( $result );
 	$response->set_status( 200 );
 	$response->header( 'Access-Control-Allow-Origin', '*' );
 	
