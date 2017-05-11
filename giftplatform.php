@@ -163,7 +163,8 @@ function get_gifts ($request) {
 	$user = get_user_by('ID', $request['id']);
 
 	$result = array(
-		'success' => true
+		'success' => true,
+		'gifts' => array()
 	);
 
 	$query = array(
@@ -176,7 +177,7 @@ function get_gifts ($request) {
 		$recipients = get_field( 'recipient', $gift->ID );
 		foreach ($recipients as $recipient) {
 			if ($recipient['ID'] == $user->ID) {
-				$result[] = $gift;
+				$result['gifts'][] = $gift;
 				break;
 			}
 		}
