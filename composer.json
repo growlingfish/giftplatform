@@ -6,6 +6,6 @@
         "source": {
           "type": "git",
           "url": "https://github.com/growlingfish/giftplatform.git",
-	  "reference": "origin/master"
+	  "reference": "0.0.0.6"
         }
 }
