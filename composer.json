@@ -1,11 +1,11 @@
 {
 
         "name": "growlingfish/giftplatform",
-        "version": "0.0.0.6",
+        "version": "master",
         "type": "wordpress-plugin",
         "source": {
           "type": "git",
           "url": "https://github.com/growlingfish/giftplatform.git",
-	  "reference": "0.0.0.6"
+	  "reference": "origin/master"
         }
 }
