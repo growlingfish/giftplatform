@@ -113,7 +113,7 @@ add_action( 'rest_api_init', 'gift_register_api_hooks' );
 function gift_register_api_hooks () {
 	global $namespace;
 	
-	register_rest_route( $namespace, '/auth/(?P<user>[\w\.]+@[\w\.]+)/(?P<pass>.+)', array(
+	register_rest_route( $namespace, '/auth/(?P<user>.+)/(?P<pass>.+)', array(
 		'methods'  => 'GET',
 		'callback' => 'gift_auth',
 		'args' => array(
