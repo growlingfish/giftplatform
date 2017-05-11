@@ -130,6 +130,17 @@ function gift_register_api_hooks () {
 			)
 		)
 	) );
+	register_rest_route( $namespace, '/gifts/(?P<id>.+)/', array(
+		'methods'  => 'GET',
+		'callback' => 'get_gifts',
+		'args' => array(
+			'id' => array(
+				'validate_callback' => function ($param, $request, $key) {
+					return is_numeric($param) && get_user_by('ID', $param);
+				}
+			)
+		)
+	) );
 }
 
 function gift_auth ($request) {
@@ -137,8 +148,39 @@ function gift_auth ($request) {
 
 	$result = array(
 		'name' => $user->data->user_nicename,
+		'id' => $user->ID,
 		'success' => true
 	);
+
+	$response = new WP_REST_Response( $result );
+	$response->set_status( 200 );
+	$response->header( 'Access-Control-Allow-Origin', '*' );
+	
+	return $response;
+}
+
+function get_gifts ($request) {
+	$user = get_user_by('ID', $request['id']);
+
+	$result = array(
+		'success' => true
+	);
+
+	$query = array(
+		'numberposts'   => -1,
+		'post_type'     => 'gift',
+		'post_status'   => 'publish'
+	);
+	$all_gifts = get_posts( $query );
+	foreach ($all_gifts as $gift) {
+		$recipients = get_field( 'recipient', $gift->ID );
+		foreach ($recipients as $recipient) {
+			if ($recipient->ID == $user->ID) {
+				$result[] = $gift;
+				break;
+			}
+		}
+	}
 
 	$response = new WP_REST_Response( $result );
 	$response->set_status( 200 );
