@@ -113,9 +113,9 @@ add_action( 'rest_api_init', 'gift_register_api_hooks' );
 function gift_register_api_hooks () {
 	global $namespace;
 	
-	register_rest_route( $namespace, '/auth/(?P<user>\d+)/(?P<pass>[\w\-]+)', array(
+	register_rest_route( $namespace, '/auth/(?P<user>[\w\-]+)/(?P<pass>[\w\-]+)', array(
 		'methods'  => 'GET',
-		'callback' => 'gift_auth'/*,
+		'callback' => 'gift_auth',
 		'args' => array(
 			'user' => array(
 				'validate_callback' => function ($param, $request, $key) {
@@ -128,7 +128,7 @@ function gift_register_api_hooks () {
 					return wp_check_password($request['pass'], $user->data->user_pass, $user->ID);
 				}
 			)
-		)*/
+		)
 	) );
 }
 
