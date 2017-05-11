@@ -3,7 +3,7 @@
  * Plugin Name:       GIFT platform plugin
  * Plugin URI:        https://github.com/growlingfish/giftplatform
  * Description:       WordPress admin and server for GIFT project digital gifting platform
- * Version:           0.0.0.5
+ * Version:           0.0.0.6
  * Author:            Ben Bedwell
  * License:           GNU General Public License v3
  * License URI:       http://www.gnu.org/licenses/gpl-3.0.html
@@ -102,23 +102,44 @@ function render_wrap_geo_meta_box ( $post ) { ?>
 </script>
 <?php	
 }
- 
+
 /*
-*	Simplify
+*	Custom API end-points
 */
 
-add_action('init', 'giftplatform_remove_categories');
-function giftplatform_remove_categories () {
-	register_taxonomy('category', array());
+$namespace = 'gift/v1';
+
+add_action( 'rest_api_init', 'gift_register_api_hooks' );
+function gift_register_api_hooks () {
+	global $namespace;
+	
+	register_rest_route( $namespace, '/auth/(?P<user>\d+)/(?P<pass>[\w\-]+)', array(
+		'methods'  => 'GET',
+		'callback' => 'gift_auth',
+		'args' => array(
+			'user' => array(
+				'validate_callback' => function ($param, $request, $key) {
+					return email_exists($param);
+				}
+			),
+			'pass' => array(
+				'validate_callback' => function($param, $request, $key) {
+					$user = get_user_by('email', $request['user']);
+					return wp_check_password($request['pass'], $user->data->user_pass, $user->ID);
+				}
+			)
+		)
+	) );
 }
 
-add_action('admin_menu', 'giftplatform_remove_admin_options');
-function giftplatform_remove_admin_options () {
-	//if (!current_user_can('manage_options')) {
-		remove_menu_page( 'edit.php' );
-		remove_menu_page( 'edit.php?post_type=page' );
-		remove_menu_page( 'edit-comments.php' );
-    //}
+function gift_auth ($request) {
+	$user = get_user_by('email', $request['user']);
+
+	$response = new WP_REST_Response( $user->data->user_nicename );
+	$response->set_status( 200 );
+	$response->header( 'Access-Control-Allow-Origin', '*' );
+	
+	return $response;
 }
 
 ?>
