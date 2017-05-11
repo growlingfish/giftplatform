@@ -166,8 +166,6 @@ function get_gifts ($request) {
 		'success' => true
 	);
 
-	$result[] = $user;
-
 	$query = array(
 		'numberposts'   => -1,
 		'post_type'     => 'gift',
@@ -177,10 +175,10 @@ function get_gifts ($request) {
 	foreach ($all_gifts as $gift) {
 		$recipients = get_field( 'recipient', $gift->ID );
 		foreach ($recipients as $recipient) {
-			/*if ($recipient->ID == $user->ID) {
+			if ($recipient->ID == $user->ID) {
 				$result[] = $gift;
 				break;
-			}*/
+			}
 		}
 	}
 
