@@ -177,8 +177,14 @@ function get_gifts ($request) {
 		$recipients = get_field( 'recipient', $gift->ID );
 		foreach ($recipients as $recipient) {
 			if ($recipient['ID'] == $user->ID) {
-				$gift->post_author_data = get_user_by('ID', $gift->post_author);
+				$gift->post_author_data = get_user_by('ID', $gift->post_author).data;
 				$gift->wraps = get_field('wrap', $gift->ID);
+				foreach ($gift->wraps as &$wrap) {
+					$wrap->unwrap_date = get_field('date', $wrap->ID);
+					$wrap->unwrap_key = get_field('key', $wrap->ID);
+					$wrap->unwrap_place = get_field('place', $wrap->ID);
+					$wrap->unwrap_artcode = get_field('artcode', $wrap->ID);
+				}
 				$gift->payloads = get_field('payload', $gift->ID);
 				$result['gifts'][] = $gift;
 				break;
