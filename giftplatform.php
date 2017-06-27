@@ -141,9 +141,25 @@ function gift_register_api_hooks () {
 			)
 		)
 	) );
-	register_rest_route( $namespace, '/newreceiver/(?P<email>.+)/(?P<from>.+)', array(
+	register_rest_route( $namespace, '/new/receiver/(?P<email>.+)/(?P<from>.+)', array(
 		'methods'  => 'GET',
 		'callback' => 'setup_receiver',
+		'args' => array(
+			'email' => array(
+				'validate_callback' => function ($param, $request, $key) {
+					return filter_var($param, FILTER_VALIDATE_EMAIL);
+				}
+			),
+			'from' => array(
+				'validate_callback' => function ($param, $request, $key) {
+					return is_numeric($param) && get_user_by('ID', $param);
+				}
+			)
+		)
+	) );
+	register_rest_route( $namespace, '/new/gift/(?P<email>.+)/(?P<from>.+)', array(
+		'methods'  => 'GET',
+		'callback' => 'create_gift',
 		'args' => array(
 			'email' => array(
 				'validate_callback' => function ($param, $request, $key) {
@@ -241,11 +257,12 @@ function setup_receiver ($request) {
 			'password' => $password
 		);
 		$gifter = get_user_by('ID', $request['from']);
-		var_dump(wp_mail(
+		/*var_dump(wp_mail(
 			$email,
 			'Welcome to GIFT',
 			$gifter->email.' has sent you your first gift! To start unwrapping your gift, download and open the GIFT Unwrapper app. You will then need to log in using this email address ('.$email.') and this password: '.$password
-		));
+		));*/
+		//https://documentation.mailgun.com/en/latest/api-sending.html#sending
 	}
 
 	$response = new WP_REST_Response( $result );
