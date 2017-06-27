@@ -3,7 +3,7 @@
  * Plugin Name:       GIFT platform plugin
  * Plugin URI:        https://github.com/growlingfish/giftplatform
  * Description:       WordPress admin and server for GIFT project digital gifting platform
- * Version:           0.0.1.2
+ * Version:           0.0.1.3
  * Author:            Ben Bedwell
  * License:           GNU General Public License v3
  * License URI:       http://www.gnu.org/licenses/gpl-3.0.html
@@ -141,13 +141,18 @@ function gift_register_api_hooks () {
 			)
 		)
 	) );
-	register_rest_route( $namespace, '/receiver/(?P<email>.+)/', array(
+	register_rest_route( $namespace, '/newreceiver/(?P<email>.+)/(?P<from>.+)', array(
 		'methods'  => 'GET',
 		'callback' => 'setup_receiver',
 		'args' => array(
 			'email' => array(
 				'validate_callback' => function ($param, $request, $key) {
 					return filter_var($param, FILTER_VALIDATE_EMAIL);
+				}
+			),
+			'from' => array(
+				'validate_callback' => function ($param, $request, $key) {
+					return is_numeric($param) && get_user_by('ID', $param);
 				}
 			)
 		)
@@ -234,6 +239,12 @@ function setup_receiver ($request) {
 		$result['new'] = array(
 			'id' => wp_create_user( $email, $password, $email ),
 			'password' => $password
+		);
+		$gifter = get_user_by('ID', $request['from']);
+		wp_mail(
+			$email,
+			'Welcome to GIFT',
+			$gifter->email.' has sent you your first gift! To start unwrapping your gift, download and open the GIFT Unwrapper app. You will then need to log in using this email address ('.$email.') and this password: '.$password
 		);
 	}
 
