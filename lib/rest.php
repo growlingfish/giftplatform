@@ -1,5 +1,4 @@
 <?php
-
 /** 
 * Send a POST requst using cURL 
 * @param string $url to request 
@@ -19,7 +18,6 @@ function curl_post($url, array $post = NULL, array $options = array())
         CURLOPT_TIMEOUT => 4, 
         CURLOPT_POSTFIELDS => http_build_query($post) 
     ); 
-
     $ch = curl_init(); 
     curl_setopt_array($ch, ($options + $defaults)); 
     if( ! $result = curl_exec($ch)) 
@@ -29,7 +27,6 @@ function curl_post($url, array $post = NULL, array $options = array())
     curl_close($ch); 
     return $result; 
 } 
-
 /** 
 * Send a GET requst using cURL 
 * @param string $url to request 
@@ -55,5 +52,4 @@ function curl_get($url, array $get = NULL, array $options = array())
     curl_close($ch); 
     return $result; 
 } 
-
 ?>
