@@ -1,0 +1,3 @@
+[submodule "giftplatform-common"]
+	path = giftplatform-common
+	url = https://github.com/growlingfish/giftplatform-common.git
