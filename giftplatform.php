@@ -3,7 +3,7 @@
  * Plugin Name:       GIFT platform plugin
  * Plugin URI:        https://github.com/growlingfish/giftplatform
  * Description:       WordPress admin and server for GIFT project digital gifting platform
- * Version:           0.0.2.3
+ * Version:           0.0.2.4
  * Author:            Ben Bedwell
  * License:           GNU General Public License v3
  * License URI:       http://www.gnu.org/licenses/gpl-3.0.html
@@ -157,22 +157,6 @@ function gift_register_api_hooks () {
 			)
 		)
 	) );
-	register_rest_route( $namespace, '/new/gift/(?P<email>.+)/(?P<from>.+)', array(
-		'methods'  => 'GET',
-		'callback' => 'create_gift',
-		'args' => array(
-			'email' => array(
-				'validate_callback' => function ($param, $request, $key) {
-					return filter_var($param, FILTER_VALIDATE_EMAIL);
-				}
-			),
-			'from' => array(
-				'validate_callback' => function ($param, $request, $key) {
-					return is_numeric($param) && get_user_by('ID', $param);
-				}
-			)
-		)
-	) );
 }
 
 function gift_auth ($request) {
@@ -257,17 +241,17 @@ function setup_receiver ($request) {
 			$password = wp_generate_password( $length=8, $include_standard_special_chars=false );
 		}
 		$result['new'] = array(
-			'id' => wp_create_user( $email, $password, $email ),
-			'password' => $password
+			'id' => wp_create_user( $email, $password, $email )
 		);
 
 		$gifter = get_user_by('ID', $request['from']);
+
 		$endpoints = parse_ini_file('giftplatform-common/endpoints.ini');
 		$typebook = parse_ini_file('giftplatform-common/types.ini');
 		curl_post($endpoints->notifications, array(
-			'type' => $typebook->createdGift,
-			'giver' => $gifter->email,
-			'receiver' => $email
+			'type' => $typebook->newReceiver,
+			'receiver' => $email,
+			'password' => $password
 		));
 	}
 
@@ -276,5 +260,6 @@ function setup_receiver ($request) {
 	$response->header( 'Access-Control-Allow-Origin', '*' );
 	return $response;
 }
+
 
 ?>
