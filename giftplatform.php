@@ -3,7 +3,7 @@
  * Plugin Name:       GIFT platform plugin
  * Plugin URI:        https://github.com/growlingfish/giftplatform
  * Description:       WordPress admin and server for GIFT project digital gifting platform
- * Version:           0.0.2.4
+ * Version:           0.0.2.5
  * Author:            Ben Bedwell
  * License:           GNU General Public License v3
  * License URI:       http://www.gnu.org/licenses/gpl-3.0.html
@@ -157,6 +157,17 @@ function gift_register_api_hooks () {
 			)
 		)
 	) );
+	register_rest_route( $namespace, '/unwrapped/gift/(?P<id>.+)/', array(
+		'methods'  => 'GET',
+		'callback' => 'unwrap_gift',
+		'args' => array(
+			'id' => array(
+				'validate_callback' => function ($param, $request, $key) {
+					return is_numeric($param) && is_string( get_post_status( $param ) );
+				}
+			)
+		)
+	) );
 }
 
 function gift_auth ($request) {
@@ -243,7 +254,9 @@ function setup_receiver ($request) {
 		$result['new'] = array(
 			'id' => wp_create_user( $email, $password, $email )
 		);
-
+		
+		// Leave to the client to hit notification server
+/*
 		$gifter = get_user_by('ID', $request['from']);
 
 		$endpoints = parse_ini_file('giftplatform-common/endpoints.ini');
@@ -252,7 +265,7 @@ function setup_receiver ($request) {
 			'type' => $typebook->newReceiver,
 			'receiver' => $email,
 			'password' => $password
-		));
+		));*/
 	}
 
 	$response = new WP_REST_Response( $result );
@@ -261,5 +274,19 @@ function setup_receiver ($request) {
 	return $response;
 }
 
+function unwrap_gift ($request) {
+	$id = $request['id'];
+
+	$result = array(
+		'success' => true
+	);
+
+	update_field('unwrapped', 1, $id);
+
+	$response = new WP_REST_Response( $result );
+	$response->set_status( 200 );
+	$response->header( 'Access-Control-Allow-Origin', '*' );
+	return $response;
+}
 
 ?>
