@@ -241,7 +241,7 @@ function get_gifts ($request) {
 				}
 				$gift->payloads = get_field('payload', $gift->ID);
 				foreach ($gift->payloads as &$payload) {
-					$payload->content = wpautop($payload->content);
+					$payload->post_content = wpautop($payload->post_content);
 				}
 				$gift->status = array(
 					'received' => get_field('received', $gift->ID),
