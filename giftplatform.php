@@ -3,7 +3,7 @@
  * Plugin Name:       GIFT platform plugin
  * Plugin URI:        https://github.com/growlingfish/giftplatform
  * Description:       WordPress admin and server for GIFT project digital gifting platform
- * Version:           0.0.2.5
+ * Version:           0.0.2.6
  * Author:            Ben Bedwell
  * License:           GNU General Public License v3
  * License URI:       http://www.gnu.org/licenses/gpl-3.0.html
@@ -168,6 +168,28 @@ function gift_register_api_hooks () {
 			)
 		)
 	) );
+	register_rest_route( $namespace, '/responded/gift/(?P<id>.+)/', array(
+		'methods'  => 'GET',
+		'callback' => 'respond_to_gift',
+		'args' => array(
+			'id' => array(
+				'validate_callback' => function ($param, $request, $key) {
+					return is_numeric($param) && is_string( get_post_status( $param ) );
+				}
+			)
+		)
+	) );
+	register_rest_route( $namespace, '/received/gift/(?P<id>.+)/', array(
+		'methods'  => 'GET',
+		'callback' => 'received_gift',
+		'args' => array(
+			'id' => array(
+				'validate_callback' => function ($param, $request, $key) {
+					return is_numeric($param) && is_string( get_post_status( $param ) );
+				}
+			)
+		)
+	) );
 }
 
 function gift_auth ($request) {
@@ -282,6 +304,36 @@ function unwrap_gift ($request) {
 	);
 
 	update_field('unwrapped', 1, $id);
+
+	$response = new WP_REST_Response( $result );
+	$response->set_status( 200 );
+	$response->header( 'Access-Control-Allow-Origin', '*' );
+	return $response;
+}
+
+function respond_to_gift ($request) {
+	$id = $request['id'];
+
+	$result = array(
+		'success' => true
+	);
+
+	update_field('responded', 1, $id);
+
+	$response = new WP_REST_Response( $result );
+	$response->set_status( 200 );
+	$response->header( 'Access-Control-Allow-Origin', '*' );
+	return $response;
+}
+
+function received_gift ($request) {
+	$id = $request['id'];
+
+	$result = array(
+		'success' => true
+	);
+
+	update_field('received', 1, $id);
 
 	$response = new WP_REST_Response( $result );
 	$response->set_status( 200 );
