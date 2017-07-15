@@ -3,7 +3,7 @@
  * Plugin Name:       GIFT platform plugin
  * Plugin URI:        https://github.com/growlingfish/giftplatform
  * Description:       WordPress admin and server for GIFT project digital gifting platform
- * Version:           0.0.3.4
+ * Version:           0.0.3.5
  * Author:            Ben Bedwell
  * License:           GNU General Public License v3
  * License URI:       http://www.gnu.org/licenses/gpl-3.0.html
@@ -215,6 +215,10 @@ function gift_register_api_hooks () {
 	register_rest_route( $namespace, '/upload/object/', array(
 		'methods'  => 'POST',
 		'callback' => 'upload'
+	) );
+	register_rest_route( $namespace, '/new/object/', array(
+		'methods'  => 'POST',
+		'callback' => 'setup_object'
 	) );
 }
 
@@ -441,6 +445,55 @@ function upload ($request) {
 		$result['filename'] = basename( $_FILES['file']['name']);
 	} else {
 		$result['success'] = false;
+	}
+
+	$response = new WP_REST_Response( $result );
+	$response->set_status( 200 );
+	$response->header( 'Access-Control-Allow-Origin', '*' );
+	return $response;
+}
+
+function setup_object ($request) {
+	$result = array(
+		'success' => true
+	);
+
+	//$post_id, $desc
+	// Generate the object post
+	// set owner to the user
+
+	// Set variables for storage, fix file filename for query strings.
+	$file = plugins_url( "/uploads/". $request['filename'], __FILE__ );
+    preg_match( '/[^\?]+\.(jpe?g|jpe|gif|png)\b/i', $file, $matches );
+    if ( ! $matches ) {
+         $response['error'] = new WP_Error( 'image_sideload_failed', __( 'Invalid image URL' ) );
+		 $response['success'] = false;
+    } else {
+		$file_array = array();
+		$file_array['name'] = basename( $matches[0] );
+
+		// Download file to temp location.
+		$file_array['tmp_name'] = download_url( $file );
+
+		// If error storing temporarily, return the error.
+		if ( is_wp_error( $file_array['tmp_name'] ) ) {
+			$response['error'] = $file_array['tmp_name'];
+			$response['success'] = false;
+		} else {
+			// Do the validation and storage stuff.
+			$id = media_handle_sideload( $file_array, $post_id, $desc );
+
+			// If error storing permanently, unlink.
+			if ( is_wp_error( $id ) ) {
+				@unlink( $file_array['tmp_name'] );
+				$response['error'] = $id;
+				$response['success'] = false;
+			} else {
+				$response['thumbnail'] = set_post_thumbnail( $post_id, $id );
+
+				// delete the image in the uploads folder
+			}
+		}
 	}
 
 	$response = new WP_REST_Response( $result );
