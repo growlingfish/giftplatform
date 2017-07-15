@@ -436,10 +436,9 @@ function upload ($request) {
 
 	define ('SITE_ROOT', realpath(dirname(__FILE__)));
 	$target_path = SITE_ROOT . "/uploads/". basename( $_FILES['file']['name']);
-	$result['path'] = $target_path;
 
 	if (move_uploaded_file($_FILES['file']['tmp_name'], $target_path)) {
-		
+		$result['filename'] = basename( $_FILES['file']['name']);
 	} else {
 		$result['success'] = false;
 	}
