@@ -3,7 +3,7 @@
  * Plugin Name:       GIFT platform plugin
  * Plugin URI:        https://github.com/growlingfish/giftplatform
  * Description:       WordPress admin and server for GIFT project digital gifting platform
- * Version:           0.0.3.6
+ * Version:           0.0.3.7
  * Author:            Ben Bedwell
  * License:           GNU General Public License v3
  * License URI:       http://www.gnu.org/licenses/gpl-3.0.html
@@ -458,6 +458,8 @@ function setup_object ($request) {
 		'success' => true
 	);
 
+	$file = plugins_url( "/uploads/". $request['filename'], __FILE__ );
+
 	$user = get_userdata( $request['owner'] );
 	if ( $user === false ) {
 		$result['success'] = false;
@@ -478,7 +480,6 @@ function setup_object ($request) {
 			update_field( 'owner', $request['owner'], $post_id );
 
 			// Set variables for storage, fix file filename for query strings.
-			$file = plugins_url( "/uploads/". $request['filename'], __FILE__ );
 			preg_match( '/[^\?]+\.(jpe?g|jpe|gif|png)\b/i', $file, $matches );
 			if ( ! $matches ) {
 				$response['error'] = new WP_Error( 'image_sideload_failed', __( 'Invalid image URL' ) );
@@ -488,6 +489,7 @@ function setup_object ($request) {
 				$file_array['name'] = basename( $matches[0] );
 
 				// Download file to temp location.
+				require_once ABSPATH . 'wp-admin/includes/file.php';
 				$file_array['tmp_name'] = download_url( $file );
 
 				// If error storing temporarily, return the error.
@@ -496,6 +498,8 @@ function setup_object ($request) {
 					$response['success'] = false;
 				} else {
 					// Do the validation and storage stuff.
+					require_once ABSPATH . 'wp-admin/includes/image.php';
+					require_once ABSPATH . 'wp-admin/includes/media.php';
 					$id = media_handle_sideload( $file_array, $post_id, $request['name'] );
 
 					// If error storing permanently, unlink.
@@ -505,8 +509,6 @@ function setup_object ($request) {
 						$response['success'] = false;
 					} else {
 						$response['thumbnail'] = set_post_thumbnail( $post_id, $id );
-
-						// delete the image in the uploads folder
 					}
 				}
 			}
@@ -515,6 +517,9 @@ function setup_object ($request) {
 			$result['object'] = $post_id->get_error_message();
 		}
 	}
+
+	// delete the image in the uploads folder
+	unlink($file);
 
 	$response = new WP_REST_Response( $result );
 	$response->set_status( 200 );
