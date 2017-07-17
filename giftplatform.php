@@ -3,7 +3,7 @@
  * Plugin Name:       GIFT platform plugin
  * Plugin URI:        https://github.com/growlingfish/giftplatform
  * Description:       WordPress admin and server for GIFT project digital gifting platform
- * Version:           0.0.3.9
+ * Version:           0.0.4.0
  * Author:            Ben Bedwell
  * License:           GNU General Public License v3
  * License URI:       http://www.gnu.org/licenses/gpl-3.0.html
@@ -554,7 +554,95 @@ function setup_gift ($request) {
 		'success' => true
 	);
 
-	$result['gift'] = $request['gift'];
+	$sender = get_userdata( $request['sender'] );
+	if ( $sender === false ) {
+		$result['success'] = false;
+	} else {
+		$gift = json_decode(stripslashes($request['gift']));
+
+		$giftcard_post = array(
+			'post_title'    => wp_strip_all_tags( $gift->giftcard->title ),
+			'post_content'  => wp_strip_all_tags( $gift->giftcard->content ),
+			'post_status'   => 'publish',
+			'post_author'   => $request['sender'],
+			'post_type'		=> 'giftcard'
+		);
+		$giftcard_id = wp_insert_post( $giftcard_post );
+		if (!is_wp_error($giftcard_id)) {
+			$result['giftcard'] = $giftcard_id;
+
+			$result['payloads'] = array();
+			foreach ($gift->payloads as $payload) {
+				$payload_post = array(
+					'post_title'    => wp_strip_all_tags( $payload->title ),
+					'post_content'  => wp_strip_all_tags( $payload->content ),
+					'post_status'   => 'publish',
+					'post_author'   => $request['sender'],
+					'post_type'		=> 'payload'
+				);
+				$payload_id = wp_insert_post( $payload_post );
+				if (!is_wp_error($payload_id)) {
+					$result['payloads'][] = $payload_id;
+				} else {
+					unset ($payload_id);
+					$result['success'] = false;
+				}
+			}
+
+			$result['wraps'] = array();
+			foreach ($gift->wraps as $wrap) {
+				$wrap_post = array(
+					'post_title'    => wp_strip_all_tags( $wrap->title ),
+					'post_status'   => 'publish',
+					'post_author'   => $request['sender'],
+					'post_type'		=> 'gift'
+				);
+				$wrap_id = wp_insert_post( $wrap_post );
+				if (!is_wp_error($wrap_id)) {
+					$result['wraps'][] = $wrap_id;
+
+					foreach ($wrap->challenges as $challenge) {
+						update_field( $challenge->type, $challenge->task, $wrap_id );
+					}
+				} else {
+					unset ($wrap_id);
+					$result['success'] = false;
+				}
+			}
+
+			$gift_post = array(
+				'post_title'    => wp_strip_all_tags( $gift->title ),
+				'post_status'   => 'publish',
+				'post_author'   => $request['sender'],
+				'post_type'		=> 'gift'
+			);
+			$gift_id = wp_insert_post( $gift_post );
+			if (!is_wp_error($gift_id)) {
+				$result['gift'] = $gift_id;
+				if (email_exists($gift->receiver)) {
+					$receiver = get_user_by('email', $gift->receiver);
+					update_field( 'recipient', $receiver->ID, $gift_id );
+					$result['receiver'] = $receiver->ID;
+
+					update_field( 'gift_card', $giftcard_id, $gift_id );
+
+					if (count($result['payloads']) > 0) {
+						update_field( 'payload', $result['payloads'], $gift_id );
+					}
+
+					if (count($result['wraps']) > 0) {
+						update_field( 'wrap', $result['wraps'], $gift_id );
+					}
+				} else {
+					$result['success'] = false;
+				}
+			} else {
+				$result['success'] = false;
+			}
+		} else {
+			$result['success'] = false;
+		}
+	}
 
 	$response = new WP_REST_Response( $result );
 	$response->set_status( 200 );
