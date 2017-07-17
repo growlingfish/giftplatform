@@ -3,7 +3,7 @@
  * Plugin Name:       GIFT platform plugin
  * Plugin URI:        https://github.com/growlingfish/giftplatform
  * Description:       WordPress admin and server for GIFT project digital gifting platform
- * Version:           0.0.4.0
+ * Version:           0.0.4.1
  * Author:            Ben Bedwell
  * License:           GNU General Public License v3
  * License URI:       http://www.gnu.org/licenses/gpl-3.0.html
@@ -595,7 +595,7 @@ function setup_gift ($request) {
 					'post_title'    => wp_strip_all_tags( $wrap->title ),
 					'post_status'   => 'publish',
 					'post_author'   => $request['sender'],
-					'post_type'		=> 'gift'
+					'post_type'		=> 'wrap'
 				);
 				$wrap_id = wp_insert_post( $wrap_post );
 				if (!is_wp_error($wrap_id)) {
