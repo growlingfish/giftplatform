@@ -479,11 +479,13 @@ function setup_object ($request) {
 			// set owner to the user
 			update_field( 'owner', $request['owner'], $post_id );
 
+			$result['objectid'] = $post_id;
+
 			// Set variables for storage, fix file filename for query strings.
 			preg_match( '/[^\?]+\.(jpe?g|jpe|gif|png)\b/i', $file, $matches );
 			if ( ! $matches ) {
-				$response['error'] = new WP_Error( 'image_sideload_failed', __( 'Invalid image URL' ) );
-				$response['success'] = false;
+				$result['error'] = new WP_Error( 'image_sideload_failed', __( 'Invalid image URL' ) );
+				$result['success'] = false;
 			} else {
 				$file_array = array();
 				$file_array['name'] = basename( $matches[0] );
@@ -494,8 +496,8 @@ function setup_object ($request) {
 
 				// If error storing temporarily, return the error.
 				if ( is_wp_error( $file_array['tmp_name'] ) ) {
-					$response['error'] = $file_array['tmp_name'];
-					$response['success'] = false;
+					$result['error'] = $file_array['tmp_name'];
+					$result['success'] = false;
 				} else {
 					// Do the validation and storage stuff.
 					require_once ABSPATH . 'wp-admin/includes/image.php';
@@ -505,10 +507,10 @@ function setup_object ($request) {
 					// If error storing permanently, unlink.
 					if ( is_wp_error( $id ) ) {
 						@unlink( $file_array['tmp_name'] );
-						$response['error'] = $id;
-						$response['success'] = false;
+						$result['error'] = $id;
+						$result['success'] = false;
 					} else {
-						$response['thumbnail'] = set_post_thumbnail( $post_id, $id );
+						$result['thumbnail'] = set_post_thumbnail( $post_id, $id );
 					}
 				}
 			}
