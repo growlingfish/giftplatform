@@ -458,41 +458,61 @@ function setup_object ($request) {
 		'success' => true
 	);
 
-	//$post_id, $desc
-	// Generate the object post
-	// set owner to the user
+	$user = get_userdata( $request['owner'] );
+	if ( $user === false ) {
+		$result['success'] = false;
+	} else {
+		// Create post object
+		$my_post = array(
+			'post_title'    => wp_strip_all_tags( $request['name'] ),
+			'post_content'  => $request['description'],
+			'post_status'   => 'publish',
+			'post_author'   => $request['owner'],
+			'post_type'		=> 'object'
+		);
+		
+		// Insert the post into the database
+		$post_id = wp_insert_post( $my_post );
+		if(!is_wp_error($post_id)){
+			// set owner to the user
+			update_field( 'owner', $request['owner'], $post_id );
 
-	// Set variables for storage, fix file filename for query strings.
-	$file = plugins_url( "/uploads/". $request['filename'], __FILE__ );
-    preg_match( '/[^\?]+\.(jpe?g|jpe|gif|png)\b/i', $file, $matches );
-    if ( ! $matches ) {
-         $response['error'] = new WP_Error( 'image_sideload_failed', __( 'Invalid image URL' ) );
-		 $response['success'] = false;
-    } else {
-		$file_array = array();
-		$file_array['name'] = basename( $matches[0] );
-
-		// Download file to temp location.
-		$file_array['tmp_name'] = download_url( $file );
-
-		// If error storing temporarily, return the error.
-		if ( is_wp_error( $file_array['tmp_name'] ) ) {
-			$response['error'] = $file_array['tmp_name'];
-			$response['success'] = false;
-		} else {
-			// Do the validation and storage stuff.
-			$id = media_handle_sideload( $file_array, $post_id, $desc );
-
-			// If error storing permanently, unlink.
-			if ( is_wp_error( $id ) ) {
-				@unlink( $file_array['tmp_name'] );
-				$response['error'] = $id;
+			// Set variables for storage, fix file filename for query strings.
+			$file = plugins_url( "/uploads/". $request['filename'], __FILE__ );
+			preg_match( '/[^\?]+\.(jpe?g|jpe|gif|png)\b/i', $file, $matches );
+			if ( ! $matches ) {
+				$response['error'] = new WP_Error( 'image_sideload_failed', __( 'Invalid image URL' ) );
 				$response['success'] = false;
 			} else {
-				$response['thumbnail'] = set_post_thumbnail( $post_id, $id );
+				$file_array = array();
+				$file_array['name'] = basename( $matches[0] );
 
-				// delete the image in the uploads folder
+				// Download file to temp location.
+				$file_array['tmp_name'] = download_url( $file );
+
+				// If error storing temporarily, return the error.
+				if ( is_wp_error( $file_array['tmp_name'] ) ) {
+					$response['error'] = $file_array['tmp_name'];
+					$response['success'] = false;
+				} else {
+					// Do the validation and storage stuff.
+					$id = media_handle_sideload( $file_array, $post_id, $request['name'] );
+
+					// If error storing permanently, unlink.
+					if ( is_wp_error( $id ) ) {
+						@unlink( $file_array['tmp_name'] );
+						$response['error'] = $id;
+						$response['success'] = false;
+					} else {
+						$response['thumbnail'] = set_post_thumbnail( $post_id, $id );
+
+						// delete the image in the uploads folder
+					}
+				}
 			}
+		} else {
+			$result['success'] = false;
+			$result['object'] = $post_id->get_error_message();
 		}
 	}
 
