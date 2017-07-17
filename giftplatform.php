@@ -3,7 +3,7 @@
  * Plugin Name:       GIFT platform plugin
  * Plugin URI:        https://github.com/growlingfish/giftplatform
  * Description:       WordPress admin and server for GIFT project digital gifting platform
- * Version:           0.0.3.8
+ * Version:           0.0.3.9
  * Author:            Ben Bedwell
  * License:           GNU General Public License v3
  * License URI:       http://www.gnu.org/licenses/gpl-3.0.html
@@ -168,6 +168,28 @@ function gift_register_api_hooks () {
 			)
 		)
 	) );
+	register_rest_route( $namespace, '/new/object/', array(
+		'methods'  => 'POST',
+		'callback' => 'setup_object',
+		'args' => array(
+			'owner' => array(
+				'validate_callback' => function ($param, $request, $key) {
+					return is_numeric($param) && get_user_by('ID', $param);
+				}
+			)
+		)
+	) );
+	register_rest_route( $namespace, '/new/gift/', array(
+		'methods'  => 'POST',
+		'callback' => 'setup_gift',
+		'args' => array(
+			'sender' => array(
+				'validate_callback' => function ($param, $request, $key) {
+					return is_numeric($param) && get_user_by('ID', $param);
+				}
+			)
+		)
+	) );
 	register_rest_route( $namespace, '/unwrapped/gift/(?P<id>.+)/', array(
 		'methods'  => 'GET',
 		'callback' => 'unwrap_gift',
@@ -215,10 +237,6 @@ function gift_register_api_hooks () {
 	register_rest_route( $namespace, '/upload/object/', array(
 		'methods'  => 'POST',
 		'callback' => 'upload'
-	) );
-	register_rest_route( $namespace, '/new/object/', array(
-		'methods'  => 'POST',
-		'callback' => 'setup_object'
 	) );
 }
 
@@ -524,6 +542,19 @@ function setup_object ($request) {
 
 	// delete the image in the uploads folder
 	unlink($file);
+
+	$response = new WP_REST_Response( $result );
+	$response->set_status( 200 );
+	$response->header( 'Access-Control-Allow-Origin', '*' );
+	return $response;
+}
+
+function setup_gift ($request) {
+	$result = array(
+		'success' => true
+	);
+
+	$result['gift'] = $request['gift'];
 
 	$response = new WP_REST_Response( $result );
 	$response->set_status( 200 );
