@@ -292,11 +292,13 @@ function get_gifts ($request) {
 					$wrap->unwrap_personal = get_field('field_594d2552e8835', $wrap->ID);
 					//$wrap->unwrap_object = get_field('object', $wrap->ID);
 					$wrap->unwrap_object = get_field('field_595b4a2bc9c1c', $wrap->ID);
-					if (count($wrap->unwrap_object) > 0) {
+					if (is_array($wrap->unwrap_object) && count($wrap->unwrap_object) > 0) {
 						$wrap->unwrap_object = $wrap->unwrap_object[0];
+					} else if (is_a($wrap->unwrap_object, 'WP_Post')) {
+							
 					} else {
 						unset($wrap->unwrap_object);
-					}
+					}  
 					if ($wrap->unwrap_object) {
 						$wrap->unwrap_object->post_image = get_the_post_thumbnail_url($wrap->unwrap_object->ID, 'large');
 						$wrap->unwrap_object->post_content = wpautop($wrap->unwrap_object->post_content);
