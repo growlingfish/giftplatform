@@ -152,7 +152,7 @@ function gift_register_api_hooks () {
 			)
 		)
 	) );
-	register_rest_route( $namespace, '/new/receiver/(?P<email>.+)/(?P<from>.+)', array(
+	register_rest_route( $namespace, '/new/receiver/(?P<email>.+)/(?P<name>.+)/(?P<from>.+)', array(
 		'methods'  => 'GET',
 		'callback' => 'setup_receiver',
 		'args' => array(
@@ -315,9 +315,12 @@ function get_gifts ($request) {
 					$giftcard->post_content = wpautop($giftcard->post_content);
 				}
 				$gift->status = array(
-					'received' => get_field('received', $gift->ID),
-					'unwrapped' => get_field('unwrapped', $gift->ID),
-					'responded' => get_field('responded', $gift->ID)
+					//'received' => get_field('received', $gift->ID),
+					'received' => get_field('field_595e186f21668', $gift->ID),
+					//'unwrapped' => get_field('unwrapped', $gift->ID),
+					'unwrapped' => get_field('field_595e0593bd980', $gift->ID),
+					//'responded' => get_field('responded', $gift->ID)
+					'responded' => get_field('field_595e05c8bd981', $gift->ID)
 				);
 				$result['gifts'][] = $gift;
 				break;
@@ -347,7 +350,8 @@ function get_objects ($request) {
 	);
 	$all_objects = get_posts( $query );
 	foreach ($all_objects as $object) {
-		$owner = get_field( 'owner', $object->ID );
+		//$owner = get_field( 'owner', $object->ID );
+		$owner = get_field( 'field_5969c3853f8f2', $object->ID );
 		if ($owner == null || $owner['ID'] == $user->ID) { // object belongs to no-one or this user
 			$object->post_image = get_the_post_thumbnail_url($object->ID, 'medium');
 			$object->post_content = wpautop($object->post_content);
@@ -385,6 +389,7 @@ function setup_receiver ($request) {
 		$result['new'] = array(
 			'id' => wp_create_user( $email, $password, $email )
 		);
+		update_user_meta($result['new']['id'], 'user_nicename', $request['name']);
 
 		$giver = get_user_by('ID', $request['from']);
 
