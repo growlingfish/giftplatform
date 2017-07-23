@@ -253,9 +253,10 @@ function gift_register_api_hooks () {
 
 function gift_auth ($request) {
 	$user = get_user_by('email', $request['user']);
+	$userdata = get_userdata($user->ID);
 
 	$result = array(
-		'name' => $user->data->user_nicename,
+		'name' => $userdata->nickname,
 		'id' => $user->ID,
 		'user' => $user,
 		'success' => true
@@ -288,6 +289,8 @@ function get_gifts ($request) {
 		foreach ($recipients as $recipient) {
 			if ($recipient['ID'] == $user->ID) {
 				$gift->post_author_data = get_user_by('ID', $gift->post_author)->data;
+				$userdata = get_userdata($gift->post_author);
+				$gift->post_author_data->nickname = $userdata->nickname;
 				//$gift->wraps = get_field('wrap', $gift->ID);
 				$gift->wraps = get_field('field_58e4f5da816ac', $gift->ID);
 				foreach ($gift->wraps as &$wrap) {
