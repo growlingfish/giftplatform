@@ -3,7 +3,7 @@
  * Plugin Name:       GIFT platform plugin
  * Plugin URI:        https://github.com/growlingfish/giftplatform
  * Description:       WordPress admin and server for GIFT project digital gifting platform
- * Version:           0.0.4.7
+ * Version:           0.0.4.8
  * Author:            Ben Bedwell
  * License:           GNU General Public License v3
  * License URI:       http://www.gnu.org/licenses/gpl-3.0.html
@@ -164,6 +164,17 @@ function gift_register_api_hooks () {
 			'from' => array(
 				'validate_callback' => function ($param, $request, $key) {
 					return is_numeric($param) && get_user_by('ID', $param);
+				}
+			)
+		)
+	) );
+	register_rest_route( $namespace, '/new/sender/(?P<email>.+)/(?P<name>.+)/(?P<pass>.+)', array(
+		'methods'  => 'GET',
+		'callback' => 'setup_sender',
+		'args' => array(
+			'email' => array(
+				'validate_callback' => function ($param, $request, $key) {
+					return filter_var($param, FILTER_VALIDATE_EMAIL) && !email_exists($param);
 				}
 			)
 		)
@@ -366,6 +377,33 @@ function get_objects ($request) {
 	return $response;
 }
 
+function setup_sender ($request) {
+	$email = $request['email'];
+
+	$result = array(
+		'success' => true,
+		'new' => array()
+	);
+
+	if (email_exists($email)) {
+		$result['success'] = false;
+		$result['existing'] = get_user_by('email', $email);
+	} else {
+		$result['new'] = array(
+			'id' => wp_create_user( $email, $request['pass'], $email )
+		);
+		update_user_meta($result['new']['id'], 'user_nicename', $request['name']);
+		update_user_meta($result['new']['id'], 'first_name', $request['name']);
+		update_user_meta($result['new']['id'], 'display_name', $request['name']);
+		update_user_meta($result['new']['id'], 'nickname', $request['name']);
+	}
+
+	$response = new WP_REST_Response( $result );
+	$response->set_status( 200 );
+	$response->header( 'Access-Control-Allow-Origin', '*' );
+	return $response;
+}
+
 function setup_receiver ($request) {
 	$email = $request['email'];
 
@@ -390,6 +428,9 @@ function setup_receiver ($request) {
 			'id' => wp_create_user( $email, $password, $email )
 		);
 		update_user_meta($result['new']['id'], 'user_nicename', $request['name']);
+		update_user_meta($result['new']['id'], 'first_name', $request['name']);
+		update_user_meta($result['new']['id'], 'display_name', $request['name']);
+		update_user_meta($result['new']['id'], 'nickname', $request['name']);
 
 		$giver = get_user_by('ID', $request['from']);
 
