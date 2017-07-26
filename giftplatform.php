@@ -3,7 +3,7 @@
  * Plugin Name:       GIFT platform plugin
  * Plugin URI:        https://github.com/growlingfish/giftplatform
  * Description:       WordPress admin and server for GIFT project digital gifting platform
- * Version:           0.0.4.9
+ * Version:           0.0.5.0
  * Author:            Ben Bedwell
  * License:           GNU General Public License v3
  * License URI:       http://www.gnu.org/licenses/gpl-3.0.html
@@ -284,6 +284,7 @@ function get_gifts ($request) {
 	);
 	$all_gifts = get_posts( $query );
 	foreach ($all_gifts as $gift) {
+		$hasObject = false;
 		//$recipients = get_field( 'recipient', $gift->ID );
 		$recipients = get_field( 'field_58e4f6e88f3d7', $gift->ID );
 		foreach ($recipients as $recipient) {
@@ -314,29 +315,33 @@ function get_gifts ($request) {
 						unset($wrap->unwrap_object);
 					}  
 					if ($wrap->unwrap_object) {
+						$hasObject = true;
 						$wrap->unwrap_object->post_image = get_the_post_thumbnail_url($wrap->unwrap_object->ID, 'large');
 						$wrap->unwrap_object->post_content = wpautop($wrap->unwrap_object->post_content);
 					}
 				}
-				//$gift->payloads = get_field('payload', $gift->ID);
-				$gift->payloads = get_field('field_58e4f689655ef', $gift->ID);
-				foreach ($gift->payloads as &$payload) {
-					$payload->post_content = wpautop($payload->post_content);
+
+				if ($hasObject) {
+					//$gift->payloads = get_field('payload', $gift->ID);
+					$gift->payloads = get_field('field_58e4f689655ef', $gift->ID);
+					foreach ($gift->payloads as &$payload) {
+						$payload->post_content = wpautop($payload->post_content);
+					}
+					//$gift->giftcards = get_field('gift_card', $gift->ID);
+					$gift->giftcards = get_field('field_5964a5787eb68', $gift->ID);
+					foreach ($gift->giftcards as &$giftcard) {
+						$giftcard->post_content = wpautop($giftcard->post_content);
+					}
+					$gift->status = array(
+						//'received' => get_field('received', $gift->ID),
+						'received' => get_field('field_595e186f21668', $gift->ID),
+						//'unwrapped' => get_field('unwrapped', $gift->ID),
+						'unwrapped' => get_field('field_595e0593bd980', $gift->ID),
+						//'responded' => get_field('responded', $gift->ID)
+						'responded' => get_field('field_595e05c8bd981', $gift->ID)
+					);
+					$result['gifts'][] = $gift;
 				}
-				//$gift->giftcards = get_field('gift_card', $gift->ID);
-				$gift->giftcards = get_field('field_5964a5787eb68', $gift->ID);
-				foreach ($gift->giftcards as &$giftcard) {
-					$giftcard->post_content = wpautop($giftcard->post_content);
-				}
-				$gift->status = array(
-					//'received' => get_field('received', $gift->ID),
-					'received' => get_field('field_595e186f21668', $gift->ID),
-					//'unwrapped' => get_field('unwrapped', $gift->ID),
-					'unwrapped' => get_field('field_595e0593bd980', $gift->ID),
-					//'responded' => get_field('responded', $gift->ID)
-					'responded' => get_field('field_595e05c8bd981', $gift->ID)
-				);
-				$result['gifts'][] = $gift;
 				break;
 			}
 		}
@@ -367,7 +372,7 @@ function get_objects ($request) {
 		//$owner = get_field( 'owner', $object->ID );
 		$owner = get_field( 'field_5969c3853f8f2', $object->ID );
 		if ($owner == null || $owner['ID'] == $user->ID) { // object belongs to no-one or this user
-			$object->post_image = get_the_post_thumbnail_url($object->ID, 'medium');
+			$object->post_image = get_the_post_thumbnail_url($object->ID, 'thumbnail');
 			$object->post_content = wpautop($object->post_content);
 			$result['objects'][] = $object;
 		}
@@ -594,7 +599,7 @@ function setup_object ($request) {
 						$result['success'] = false;
 					} else {
 						if (set_post_thumbnail( $post_id, $id )) {
-							$result['thumbnail'] = get_the_post_thumbnail_url($post_id, 'medium');
+							$result['thumbnail'] = get_the_post_thumbnail_url($post_id, 'thumbnail');
 						}
 					}
 				}
