@@ -751,7 +751,7 @@ function gift_v1_register_api_hooks () {
 	
 	register_rest_route( $namespace, '/auth/(?P<user>.+)/(?P<pass>.+)', array(
 		'methods'  => 'GET',
-		'callback' => 'gift_auth',
+		'callback' => 'v1_gift_auth',
 		'args' => array(
 			'user' => array(
 				'validate_callback' => function ($param, $request, $key) {
@@ -768,7 +768,7 @@ function gift_v1_register_api_hooks () {
 	) );
 	register_rest_route( $namespace, '/gifts/(?P<id>.+)/', array(
 		'methods'  => 'GET',
-		'callback' => 'get_gifts',
+		'callback' => 'v1_get_gifts',
 		'args' => array(
 			'id' => array(
 				'validate_callback' => function ($param, $request, $key) {
@@ -779,7 +779,7 @@ function gift_v1_register_api_hooks () {
 	) );
 	register_rest_route( $namespace, '/objects/(?P<id>.+)/', array(
 		'methods'  => 'GET',
-		'callback' => 'get_objects',
+		'callback' => 'v1_get_objects',
 		'args' => array(
 			'id' => array(
 				'validate_callback' => function ($param, $request, $key) {
@@ -790,7 +790,7 @@ function gift_v1_register_api_hooks () {
 	) );
 	register_rest_route( $namespace, '/new/receiver/(?P<email>.+)/(?P<name>.+)/(?P<from>.+)', array(
 		'methods'  => 'GET',
-		'callback' => 'setup_receiver',
+		'callback' => 'v1_setup_receiver',
 		'args' => array(
 			'email' => array(
 				'validate_callback' => function ($param, $request, $key) {
@@ -806,7 +806,7 @@ function gift_v1_register_api_hooks () {
 	) );
 	register_rest_route( $namespace, '/new/sender/(?P<email>.+)/(?P<name>.+)/(?P<pass>.+)', array(
 		'methods'  => 'GET',
-		'callback' => 'setup_sender',
+		'callback' => 'v1_setup_sender',
 		'args' => array(
 			'email' => array(
 				'validate_callback' => function ($param, $request, $key) {
@@ -817,7 +817,7 @@ function gift_v1_register_api_hooks () {
 	) );
 	register_rest_route( $namespace, '/new/object/', array(
 		'methods'  => 'POST',
-		'callback' => 'setup_object',
+		'callback' => 'v1_setup_object',
 		'args' => array(
 			'owner' => array(
 				'validate_callback' => function ($param, $request, $key) {
@@ -828,7 +828,7 @@ function gift_v1_register_api_hooks () {
 	) );
 	register_rest_route( $namespace, '/new/gift/', array(
 		'methods'  => 'POST',
-		'callback' => 'setup_gift',
+		'callback' => 'v1_setup_gift',
 		'args' => array(
 			'sender' => array(
 				'validate_callback' => function ($param, $request, $key) {
@@ -839,7 +839,7 @@ function gift_v1_register_api_hooks () {
 	) );
 	register_rest_route( $namespace, '/unwrapped/gift/(?P<id>.+)/', array(
 		'methods'  => 'GET',
-		'callback' => 'unwrap_gift',
+		'callback' => 'v1_unwrap_gift',
 		'args' => array(
 			'id' => array(
 				'validate_callback' => function ($param, $request, $key) {
@@ -850,7 +850,7 @@ function gift_v1_register_api_hooks () {
 	) );
 	register_rest_route( $namespace, '/responded/gift/(?P<id>.+)/', array(
 		'methods'  => 'GET',
-		'callback' => 'respond_to_gift',
+		'callback' => 'v1_respond_to_gift',
 		'args' => array(
 			'id' => array(
 				'validate_callback' => function ($param, $request, $key) {
@@ -861,7 +861,7 @@ function gift_v1_register_api_hooks () {
 	) );
 	register_rest_route( $namespace, '/received/gift/(?P<id>.+)/', array(
 		'methods'  => 'GET',
-		'callback' => 'received_gift',
+		'callback' => 'v1_received_gift',
 		'args' => array(
 			'id' => array(
 				'validate_callback' => function ($param, $request, $key) {
@@ -872,7 +872,7 @@ function gift_v1_register_api_hooks () {
 	) );
 	register_rest_route( $namespace, '/validate/receiver/(?P<email>.+)/', array(
 		'methods'  => 'GET',
-		'callback' => 'validate_receiver',
+		'callback' => 'v1_validate_receiver',
 		'args' => array(
 			'email' => array(
 				'validate_callback' => function ($param, $request, $key) {
@@ -883,11 +883,11 @@ function gift_v1_register_api_hooks () {
 	) );
 	register_rest_route( $namespace, '/upload/object/', array(
 		'methods'  => 'POST',
-		'callback' => 'upload'
+		'callback' => 'v1_upload'
 	) );
 }
 
-function gift_auth ($request) {
+function v1_gift_auth ($request) {
 	$user = get_user_by('email', $request['user']);
 	$userdata = get_userdata($user->ID);
 
@@ -905,7 +905,7 @@ function gift_auth ($request) {
 	return $response;
 }
 
-function get_gifts ($request) {
+function v1_get_gifts ($request) {
 	$user = get_user_by('ID', $request['id']);
 
 	$result = array(
@@ -990,7 +990,7 @@ function get_gifts ($request) {
 	return $response;
 }
 
-function get_objects ($request) {
+function v1_get_objects ($request) {
 	$user = get_user_by('ID', $request['id']);
 
 	$result = array(
@@ -1021,7 +1021,7 @@ function get_objects ($request) {
 	return $response;
 }
 
-function setup_sender ($request) {
+function v1_setup_sender ($request) {
 	$email = $request['email'];
 
 	$result = array(
@@ -1048,7 +1048,7 @@ function setup_sender ($request) {
 	return $response;
 }
 
-function setup_receiver ($request) {
+function v1_setup_receiver ($request) {
 	$email = $request['email'];
 
 	$result = array(
@@ -1092,7 +1092,7 @@ function setup_receiver ($request) {
 	return $response;
 }
 
-function unwrap_gift ($request) {
+function v1_unwrap_gift ($request) {
 	$id = $request['id'];
 
 	$result = array(
@@ -1107,7 +1107,7 @@ function unwrap_gift ($request) {
 	return $response;
 }
 
-function respond_to_gift ($request) {
+function v1_respond_to_gift ($request) {
 	$id = $request['id'];
 
 	$result = array(
@@ -1122,7 +1122,7 @@ function respond_to_gift ($request) {
 	return $response;
 }
 
-function received_gift ($request) {
+function v1_received_gift ($request) {
 	$id = $request['id'];
 
 	$result = array(
@@ -1137,7 +1137,7 @@ function received_gift ($request) {
 	return $response;
 }
 
-function validate_receiver ($request) {
+function v1_validate_receiver ($request) {
 	$email = $request['email'];
 
 	$result = array(
@@ -1157,7 +1157,7 @@ function validate_receiver ($request) {
 	return $response;
 }
 
-function upload ($request) {
+function v1_upload ($request) {
 	$result = array(
 		'success' => true
 	);
@@ -1177,7 +1177,7 @@ function upload ($request) {
 	return $response;
 }
 
-function setup_object ($request) {
+function v1_setup_object ($request) {
 	$result = array(
 		'success' => true
 	);
@@ -1255,7 +1255,7 @@ function setup_object ($request) {
 	return $response;
 }
 
-function setup_gift ($request) {
+function v1_setup_gift ($request) {
 	$result = array(
 		'success' => true
 	);
