@@ -3,7 +3,7 @@
  * Plugin Name:       GIFT platform plugin
  * Plugin URI:        https://github.com/growlingfish/giftplatform
  * Description:       WordPress admin and server for GIFT project digital gifting platform
- * Version:           0.0.5.3
+ * Version:           0.0.5.4
  * Author:            Ben Bedwell
  * License:           GNU General Public License v3
  * License URI:       http://www.gnu.org/licenses/gpl-3.0.html
@@ -259,11 +259,8 @@ function gift_v2_register_api_hooks () {
 
 function gift_auth ($request) {
 	$user = get_user_by('login', $request['user']);
-	$userdata = get_userdata($user->ID);
 
 	$result = array(
-		'name' => $userdata->nickname,
-		'id' => $user->ID,
 		'user' => $user,
 		'success' => true
 	);
@@ -397,7 +394,7 @@ function setup_sender ($request) {
 
 	$result = array(
 		'success' => true,
-		'new' => array()
+		'user' => array()
 	);
 
 	if (email_exists($email)) {
@@ -407,13 +404,13 @@ function setup_sender ($request) {
 		$result['success'] = false;
 		$result['existing'] = get_user_by('login', $username);
 	} else {
-		$result['new'] = array(
-			'id' => wp_create_user( $username, $request['pass'], $email )
-		);
-		update_user_meta($result['new']['id'], 'user_nicename', $request['name']);
-		update_user_meta($result['new']['id'], 'first_name', $request['name']);
-		update_user_meta($result['new']['id'], 'display_name', $request['name']);
-		update_user_meta($result['new']['id'], 'nickname', $request['name']);
+		$id = wp_create_user( $username, $request['pass'], $email );
+		update_user_meta($id, 'user_nicename', $request['name']);
+		update_user_meta($id, 'first_name', $request['name']);
+		update_user_meta($id, 'display_name', $request['name']);
+		update_user_meta($id, 'nickname', $request['name']);
+
+		$result['user'] = get_user('id', $id);
 	}
 
 	$response = new WP_REST_Response( $result );
