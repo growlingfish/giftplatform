@@ -175,7 +175,7 @@ function gift_v2_register_api_hooks () {
 		'args' => array(
 			'username' => array(
 				'validate_callback' => function ($param, $request, $key) {
-					return filter_var($param, FILTER_VALIDATE_EMAIL) && !username_exists($param);
+					return !username_exists($param);
 				}
 			),
 			'email' => array(
