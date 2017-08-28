@@ -109,8 +109,8 @@ function render_wrap_geo_meta_box ( $post ) { ?>
 
 $namespace = 'gift/v2';
 
-add_action( 'rest_api_init', 'gift_register_api_hooks' );
-function gift_register_api_hooks () {
+add_action( 'rest_api_init', 'gift_v2_register_api_hooks' );
+function gift_v2_register_api_hooks () {
 	global $namespace;
 	
 	register_rest_route( $namespace, '/auth/(?P<user>.+)/(?P<pass>.+)', array(
@@ -745,8 +745,8 @@ function setup_gift ($request) {
 
 $namespace = 'gift/v1';
 
-add_action( 'rest_api_init', 'gift_register_api_hooks' );
-function gift_register_api_hooks () {
+add_action( 'rest_api_init', 'gift_v1_register_api_hooks' );
+function gift_v1_register_api_hooks () {
 	global $namespace;
 	
 	register_rest_route( $namespace, '/auth/(?P<user>.+)/(?P<pass>.+)', array(
