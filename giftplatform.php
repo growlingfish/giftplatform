@@ -3,7 +3,7 @@
  * Plugin Name:       GIFT platform plugin
  * Plugin URI:        https://github.com/growlingfish/giftplatform
  * Description:       WordPress admin and server for GIFT project digital gifting platform
- * Version:           0.0.5.1
+ * Version:           0.0.5.2
  * Author:            Ben Bedwell
  * License:           GNU General Public License v3
  * License URI:       http://www.gnu.org/licenses/gpl-3.0.html
@@ -107,13 +107,14 @@ function render_wrap_geo_meta_box ( $post ) { ?>
 *	Custom API end-points: year 1 review
 */
 
-$namespace = 'gift/v2';
+$namespace = 'gift';
 
 add_action( 'rest_api_init', 'gift_v2_register_api_hooks' );
 function gift_v2_register_api_hooks () {
 	global $namespace;
+	$version = 2;
 	
-	register_rest_route( $namespace, '/auth/(?P<user>.+)/(?P<pass>.+)', array(
+	register_rest_route( $namespace, '/v'.$version.'/auth/(?P<user>.+)/(?P<pass>.+)', array(
 		'methods'  => 'GET',
 		'callback' => 'gift_auth',
 		'args' => array(
@@ -130,7 +131,7 @@ function gift_v2_register_api_hooks () {
 			)
 		)
 	) );
-	register_rest_route( $namespace, '/gifts/(?P<id>.+)/', array(
+	register_rest_route( $namespace, '/v'.$version.'/gifts/(?P<id>.+)/', array(
 		'methods'  => 'GET',
 		'callback' => 'get_gifts',
 		'args' => array(
@@ -141,7 +142,7 @@ function gift_v2_register_api_hooks () {
 			)
 		)
 	) );
-	register_rest_route( $namespace, '/objects/(?P<id>.+)/', array(
+	register_rest_route( $namespace, '/v'.$version.'/objects/(?P<id>.+)/', array(
 		'methods'  => 'GET',
 		'callback' => 'get_objects',
 		'args' => array(
@@ -152,7 +153,7 @@ function gift_v2_register_api_hooks () {
 			)
 		)
 	) );
-	register_rest_route( $namespace, '/new/receiver/(?P<email>.+)/(?P<name>.+)/(?P<from>.+)', array(
+	register_rest_route( $namespace, '/v'.$version.'/new/receiver/(?P<email>.+)/(?P<name>.+)/(?P<from>.+)', array(
 		'methods'  => 'GET',
 		'callback' => 'setup_receiver',
 		'args' => array(
@@ -168,7 +169,7 @@ function gift_v2_register_api_hooks () {
 			)
 		)
 	) );
-	register_rest_route( $namespace, '/new/sender/(?P<email>.+)/(?P<username>.+)/(?P<name>.+)/(?P<pass>.+)', array(
+	register_rest_route( $namespace, '/v'.$version.'/new/sender/(?P<email>.+)/(?P<username>.+)/(?P<name>.+)/(?P<pass>.+)', array(
 		'methods'  => 'GET',
 		'callback' => 'setup_sender',
 		'args' => array(
@@ -184,7 +185,7 @@ function gift_v2_register_api_hooks () {
 			)
 		)
 	) );
-	register_rest_route( $namespace, '/new/object/', array(
+	register_rest_route( $namespace, '/v'.$version.'/new/object/', array(
 		'methods'  => 'POST',
 		'callback' => 'setup_object',
 		'args' => array(
@@ -195,7 +196,7 @@ function gift_v2_register_api_hooks () {
 			)
 		)
 	) );
-	register_rest_route( $namespace, '/new/gift/', array(
+	register_rest_route( $namespace, '/v'.$version.'/new/gift/', array(
 		'methods'  => 'POST',
 		'callback' => 'setup_gift',
 		'args' => array(
@@ -206,7 +207,7 @@ function gift_v2_register_api_hooks () {
 			)
 		)
 	) );
-	register_rest_route( $namespace, '/unwrapped/gift/(?P<id>.+)/', array(
+	register_rest_route( $namespace, '/v'.$version.'/unwrapped/gift/(?P<id>.+)/', array(
 		'methods'  => 'GET',
 		'callback' => 'unwrap_gift',
 		'args' => array(
@@ -217,7 +218,7 @@ function gift_v2_register_api_hooks () {
 			)
 		)
 	) );
-	register_rest_route( $namespace, '/responded/gift/(?P<id>.+)/', array(
+	register_rest_route( $namespace, '/v'.$version.'/responded/gift/(?P<id>.+)/', array(
 		'methods'  => 'GET',
 		'callback' => 'respond_to_gift',
 		'args' => array(
@@ -228,7 +229,7 @@ function gift_v2_register_api_hooks () {
 			)
 		)
 	) );
-	register_rest_route( $namespace, '/received/gift/(?P<id>.+)/', array(
+	register_rest_route( $namespace, '/v'.$version.'/received/gift/(?P<id>.+)/', array(
 		'methods'  => 'GET',
 		'callback' => 'received_gift',
 		'args' => array(
@@ -239,7 +240,7 @@ function gift_v2_register_api_hooks () {
 			)
 		)
 	) );
-	register_rest_route( $namespace, '/validate/receiver/(?P<email>.+)/', array(
+	register_rest_route( $namespace, '/v'.$version.'/validate/receiver/(?P<email>.+)/', array(
 		'methods'  => 'GET',
 		'callback' => 'validate_receiver',
 		'args' => array(
@@ -250,7 +251,7 @@ function gift_v2_register_api_hooks () {
 			)
 		)
 	) );
-	register_rest_route( $namespace, '/upload/object/', array(
+	register_rest_route( $namespace, '/v'.$version.'/upload/object/', array(
 		'methods'  => 'POST',
 		'callback' => 'upload'
 	) );
@@ -743,13 +744,12 @@ function setup_gift ($request) {
 *	Custom API end-points: first Brighton sprint
 */
 
-$namespace = 'gift/v1';
-
 add_action( 'rest_api_init', 'gift_v1_register_api_hooks' );
 function gift_v1_register_api_hooks () {
 	global $namespace;
+	$version = 1;
 	
-	register_rest_route( $namespace, '/auth/(?P<user>.+)/(?P<pass>.+)', array(
+	register_rest_route( $namespace, '/v'.$version.'/auth/(?P<user>.+)/(?P<pass>.+)', array(
 		'methods'  => 'GET',
 		'callback' => 'v1_gift_auth',
 		'args' => array(
@@ -766,7 +766,7 @@ function gift_v1_register_api_hooks () {
 			)
 		)
 	) );
-	register_rest_route( $namespace, '/gifts/(?P<id>.+)/', array(
+	register_rest_route( $namespace, '/v'.$version.'/gifts/(?P<id>.+)/', array(
 		'methods'  => 'GET',
 		'callback' => 'v1_get_gifts',
 		'args' => array(
@@ -777,7 +777,7 @@ function gift_v1_register_api_hooks () {
 			)
 		)
 	) );
-	register_rest_route( $namespace, '/objects/(?P<id>.+)/', array(
+	register_rest_route( $namespace, '/v'.$version.'/objects/(?P<id>.+)/', array(
 		'methods'  => 'GET',
 		'callback' => 'v1_get_objects',
 		'args' => array(
@@ -788,7 +788,7 @@ function gift_v1_register_api_hooks () {
 			)
 		)
 	) );
-	register_rest_route( $namespace, '/new/receiver/(?P<email>.+)/(?P<name>.+)/(?P<from>.+)', array(
+	register_rest_route( $namespace, '/v'.$version.'/new/receiver/(?P<email>.+)/(?P<name>.+)/(?P<from>.+)', array(
 		'methods'  => 'GET',
 		'callback' => 'v1_setup_receiver',
 		'args' => array(
@@ -804,7 +804,7 @@ function gift_v1_register_api_hooks () {
 			)
 		)
 	) );
-	register_rest_route( $namespace, '/new/sender/(?P<email>.+)/(?P<name>.+)/(?P<pass>.+)', array(
+	register_rest_route( $namespace, '/v'.$version.'/new/sender/(?P<email>.+)/(?P<name>.+)/(?P<pass>.+)', array(
 		'methods'  => 'GET',
 		'callback' => 'v1_setup_sender',
 		'args' => array(
@@ -815,7 +815,7 @@ function gift_v1_register_api_hooks () {
 			)
 		)
 	) );
-	register_rest_route( $namespace, '/new/object/', array(
+	register_rest_route( $namespace, '/v'.$version.'/new/object/', array(
 		'methods'  => 'POST',
 		'callback' => 'v1_setup_object',
 		'args' => array(
@@ -826,7 +826,7 @@ function gift_v1_register_api_hooks () {
 			)
 		)
 	) );
-	register_rest_route( $namespace, '/new/gift/', array(
+	register_rest_route( $namespace, '/v'.$version.'/new/gift/', array(
 		'methods'  => 'POST',
 		'callback' => 'v1_setup_gift',
 		'args' => array(
@@ -837,7 +837,7 @@ function gift_v1_register_api_hooks () {
 			)
 		)
 	) );
-	register_rest_route( $namespace, '/unwrapped/gift/(?P<id>.+)/', array(
+	register_rest_route( $namespace, '/v'.$version.'/unwrapped/gift/(?P<id>.+)/', array(
 		'methods'  => 'GET',
 		'callback' => 'v1_unwrap_gift',
 		'args' => array(
@@ -848,7 +848,7 @@ function gift_v1_register_api_hooks () {
 			)
 		)
 	) );
-	register_rest_route( $namespace, '/responded/gift/(?P<id>.+)/', array(
+	register_rest_route( $namespace, '/v'.$version.'/responded/gift/(?P<id>.+)/', array(
 		'methods'  => 'GET',
 		'callback' => 'v1_respond_to_gift',
 		'args' => array(
@@ -859,7 +859,7 @@ function gift_v1_register_api_hooks () {
 			)
 		)
 	) );
-	register_rest_route( $namespace, '/received/gift/(?P<id>.+)/', array(
+	register_rest_route( $namespace, '/v'.$version.'/received/gift/(?P<id>.+)/', array(
 		'methods'  => 'GET',
 		'callback' => 'v1_received_gift',
 		'args' => array(
@@ -870,7 +870,7 @@ function gift_v1_register_api_hooks () {
 			)
 		)
 	) );
-	register_rest_route( $namespace, '/validate/receiver/(?P<email>.+)/', array(
+	register_rest_route( $namespace, '/v'.$version.'/validate/receiver/(?P<email>.+)/', array(
 		'methods'  => 'GET',
 		'callback' => 'v1_validate_receiver',
 		'args' => array(
@@ -881,7 +881,7 @@ function gift_v1_register_api_hooks () {
 			)
 		)
 	) );
-	register_rest_route( $namespace, '/upload/object/', array(
+	register_rest_route( $namespace, '/v'.$version.'/upload/object/', array(
 		'methods'  => 'POST',
 		'callback' => 'v1_upload'
 	) );
