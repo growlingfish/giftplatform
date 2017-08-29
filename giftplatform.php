@@ -301,12 +301,12 @@ function get_contacts ($request) {
 	));
 	$users = array();
 	foreach ($u as $user) {
-		$userdata = get_userdata($user->data->post_author);
+		$userdata = get_userdata($user->data->ID);
 		$users[] = array(
 			'ID'			=> $user->data->ID,
 			'user_email'	=> $user->data->user_email,
 			'nickname'		=> $userdata->nickname,
-			'gravatar'		=> get_avatar( $user->data->ID, 32 )
+			'gravatar'		=> get_avatar_url( $user->data->ID, 32 )
 		);
 	}
 	
