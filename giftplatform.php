@@ -174,7 +174,7 @@ function gift_v2_register_api_hooks () {
 				}
 			)
 		)
-	) );
+	) );*/
 	register_rest_route( $namespace.'/v'.$version, '/new/receiver/(?P<email>.+)/(?P<name>.+)/(?P<from>.+)', array(
 		'methods'  => 'GET',
 		'callback' => 'setup_receiver',
@@ -190,7 +190,7 @@ function gift_v2_register_api_hooks () {
 				}
 			)
 		)
-	) );*/
+	) );
 	register_rest_route( $namespace.'/v'.$version, '/new/sender/(?P<username>.+)/(?P<pass>.+)/(?P<email>.+)/(?P<name>.+)', array(
 		'methods'  => 'GET',
 		'callback' => 'setup_sender',
@@ -556,7 +556,7 @@ function setup_receiver ($request) {
 
 	$result = array(
 		'success' => true,
-		'new' => array()
+		'user' => array()
 	);
 
 	if (email_exists($email)) {
@@ -571,13 +571,12 @@ function setup_receiver ($request) {
 		} else {
 			$password = wp_generate_password( $length=8, $include_standard_special_chars=false );
 		}
-		$result['new'] = array(
-			'id' => wp_create_user( $email, $password, $email )
-		);
-		update_user_meta($result['new']['id'], 'user_nicename', $request['name']);
-		update_user_meta($result['new']['id'], 'first_name', $request['name']);
-		update_user_meta($result['new']['id'], 'display_name', $request['name']);
-		update_user_meta($result['new']['id'], 'nickname', $request['name']);
+		$id = wp_create_user( $email, $password, $email );
+		update_user_meta($id, 'user_nicename', $request['name']);
+		update_user_meta($id, 'first_name', $request['name']);
+		update_user_meta($id, 'display_name', $request['name']);
+		update_user_meta($id, 'nickname', $request['name']);
+		$result['user'] = get_user_by('ID', $id);
 
 		$giver = get_user_by('ID', $request['from']);
 
