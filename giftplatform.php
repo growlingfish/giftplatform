@@ -3,7 +3,7 @@
  * Plugin Name:       GIFT platform plugin
  * Plugin URI:        https://github.com/growlingfish/giftplatform
  * Description:       WordPress admin and server for GIFT project digital gifting platform
- * Version:           0.0.6.7
+ * Version:           0.0.6.8
  * Author:            Ben Bedwell
  * License:           GNU General Public License v3
  * License URI:       http://www.gnu.org/licenses/gpl-3.0.html
@@ -221,7 +221,7 @@ function gift_v2_register_api_hooks () {
 				}
 			)
 		)
-	) );/*
+	) );
 	register_rest_route( $namespace.'/v'.$version, '/new/gift/', array(
 		'methods'  => 'POST',
 		'callback' => 'setup_gift',
@@ -232,7 +232,7 @@ function gift_v2_register_api_hooks () {
 				}
 			)
 		)
-	) );
+	) );/*
 	register_rest_route( $namespace.'/v'.$version, '/unwrapped/gift/(?P<id>.+)/', array(
 		'methods'  => 'GET',
 		'callback' => 'unwrap_gift',
@@ -798,8 +798,8 @@ function setup_gift ($request) {
 		$gift = json_decode(stripslashes($request['gift']));
 
 		$giftcard_post = array(
-			'post_title'    => wp_strip_all_tags( $gift->giftcard->title ),
-			'post_content'  => wp_strip_all_tags( $gift->giftcard->content ),
+			'post_title'    => wp_strip_all_tags( $gift->giftcards[0]->post_title ),
+			'post_content'  => wp_strip_all_tags( $gift->giftcards[0]->post_content ),
 			'post_status'   => 'publish',
 			'post_author'   => $request['sender'],
 			'post_type'		=> 'giftcard'
@@ -811,10 +811,11 @@ function setup_gift ($request) {
 			$result['payloads'] = array();
 			foreach ($gift->payloads as $payload) {
 				$payload_post = array(
-					'post_title'    => wp_strip_all_tags( $payload->title ),
-					'post_content'  => wp_strip_all_tags( $payload->content ),
+					'post_title'    => wp_strip_all_tags( $payload->post_title ),
+					'post_content'  => wp_strip_all_tags( $payload->post_content ),
 					'post_status'   => 'publish',
 					'post_author'   => $request['sender'],
+					'menu_order'	=> $payload->menu_order,
 					'post_type'		=> 'payload'
 				);
 				$payload_id = wp_insert_post( $payload_post );
@@ -829,21 +830,16 @@ function setup_gift ($request) {
 			$result['wraps'] = array();
 			foreach ($gift->wraps as $wrap) {
 				$wrap_post = array(
-					'post_title'    => wp_strip_all_tags( $wrap->title ),
+					'post_title'    => 'Wrap '.$wrap->menu_order.' for '.wp_strip_all_tags( $gift->post_title ),
 					'post_status'   => 'publish',
 					'post_author'   => $request['sender'],
+					'menu_order'	=> $wrap->menu_order,
 					'post_type'		=> 'wrap'
 				);
 				$wrap_id = wp_insert_post( $wrap_post );
 				if (!is_wp_error($wrap_id)) {
 					$result['wraps'][] = $wrap_id;
-
-					foreach ($wrap->challenges as $challenge) {
-						if ($challenge->type == 'object') {
-							$challenge->task = array($challenge->task);
-						}
-						update_field( $challenge->type, $challenge->task, $wrap_id );
-					}
+					update_field( 'object', array($wrap->unwrap_object->ID), $wrap_id );
 				} else {
 					unset ($wrap_id);
 					$result['success'] = false;
@@ -851,7 +847,7 @@ function setup_gift ($request) {
 			}
 
 			$gift_post = array(
-				'post_title'    => wp_strip_all_tags( $gift->title ),
+				'post_title'    => wp_strip_all_tags( $gift->post_title ),
 				'post_status'   => 'publish',
 				'post_author'   => $request['sender'],
 				'post_type'		=> 'gift'
@@ -859,10 +855,10 @@ function setup_gift ($request) {
 			$gift_id = wp_insert_post( $gift_post );
 			if (!is_wp_error($gift_id)) {
 				$result['gift'] = $gift_id;
-				if (email_exists($gift->receiver)) {
-					$receiver = get_user_by('email', $gift->receiver);
-					update_field( 'recipient', array($receiver->ID), $gift_id );
-					$result['receiver'] = $receiver->ID;
+				if (email_exists($gift->recipient)) {
+					$recipient = get_user_by('id', $gift->recipient->ID);
+					update_field( 'recipient', array($recipient->ID), $gift_id );
+					$result['recipient'] = $recipient->ID;
 
 					update_field( 'gift_card', $giftcard_id, $gift_id );
 
@@ -878,7 +874,7 @@ function setup_gift ($request) {
 					curl_post('https://chat.gifting.digital/api/', array(
 						'type' => '000', //types->createdGift
 						'giver' => $sender->user_email,
-						'receiver' => $gift->receiver
+						'receiver' => $gift->recipient
 					));
 				} else {
 					$result['success'] = false;
