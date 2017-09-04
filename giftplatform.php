@@ -706,11 +706,11 @@ function upload () {
 }
 
 function setup_object ($request) {
+  	$object = json_decode(stripslashes($request['object']));
+  
 	$result = array(
 		'success' => true
 	);
-
-	$file = plugins_url( "/uploads/". $request['filename'], __FILE__ );
 
 	$user = get_userdata( $request['owner'] );
 	if ( $user === false ) {
@@ -718,8 +718,8 @@ function setup_object ($request) {
 	} else {
 		// Create post object
 		$my_post = array(
-			'post_title'    => wp_strip_all_tags( $request['name'] ),
-			'post_content'  => $request['description'],
+			'post_title'    => wp_strip_all_tags( $object->post_title ),
+			'post_content'  => $object->post_content,
 			'post_status'   => 'publish',
 			'post_author'   => $request['owner'],
 			'post_type'		=> 'object'
@@ -729,12 +729,15 @@ function setup_object ($request) {
 		$post_id = wp_insert_post( $my_post );
 		if(!is_wp_error($post_id)){
 			// set owner to the user
-			update_field( 'owner', $request['owner'], $post_id );
+			update_field( 'owner', $request['owner'], $post_id ); //field_5969c3853f8f2
 
-			$result['objectid'] = $post_id;
+			// set location
+			update_field( 'location', $object->location->ID, $post_id ); //field_59a85fff4be5a
+
+			$result['object'] = get_post($post_id);
 
 			// Set variables for storage, fix file filename for query strings.
-			preg_match( '/[^\?]+\.(jpe?g|jpe|gif|png)\b/i', $file, $matches );
+			preg_match( '/[^\?]+\.(jpe?g|jpe|gif|png)\b/i', $object->post_image, $matches );
 			if ( ! $matches ) {
 				$result['error'] = new WP_Error( 'image_sideload_failed', __( 'Invalid image URL' ) );
 				$result['success'] = false;
@@ -744,7 +747,7 @@ function setup_object ($request) {
 
 				// Download file to temp location.
 				require_once ABSPATH . 'wp-admin/includes/file.php';
-				$file_array['tmp_name'] = download_url( $file );
+				$file_array['tmp_name'] = download_url( $object->post_image );
 
 				// If error storing temporarily, return the error.
 				if ( is_wp_error( $file_array['tmp_name'] ) ) {
@@ -770,12 +773,12 @@ function setup_object ($request) {
 			}
 		} else {
 			$result['success'] = false;
-			$result['object'] = $post_id->get_error_message();
+			$result['error'] = $post_id->get_error_message();
 		}
 	}
 
 	// delete the image in the uploads folder
-	unlink($file);
+	unlink($object->post_image);
 
 	$response = new WP_REST_Response( $result );
 	$response->set_status( 200 );
