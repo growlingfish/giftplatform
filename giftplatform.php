@@ -457,7 +457,7 @@ function get_received_gifts ($request) {
 						$hasObject = true;
 						$wrap->unwrap_object->post_image = get_the_post_thumbnail_url($wrap->unwrap_object->ID, 'large');
 						$wrap->unwrap_object->post_content = wpautop($wrap->unwrap_object->post_content);
-						$wrap->unwrap_object->location = get_field('field_59a85fff4be5a', $wrap->ID);
+						$wrap->unwrap_object->location = get_field('field_59a85fff4be5a', $wrap->unwrap_object->ID);
 					}
 				}
 
