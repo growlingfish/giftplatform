@@ -3,7 +3,7 @@
  * Plugin Name:       GIFT platform plugin
  * Plugin URI:        https://github.com/growlingfish/giftplatform
  * Description:       WordPress admin and server for GIFT project digital gifting platform
- * Version:           0.0.7.1
+ * Version:           0.0.7.2
  * Author:            Ben Bedwell
  * License:           GNU General Public License v3
  * License URI:       http://www.gnu.org/licenses/gpl-3.0.html
@@ -874,8 +874,8 @@ function setup_gift ($request) {
 					require_once('lib/rest.php');
 					curl_post('https://chat.gifting.digital/api/', array(
 						'type' => '000', //types->createdGift
-						'giver' => $sender->user_email,
-						'receiver' => $gift->recipient->user_email
+						'sender' => $sender->nickname,
+						'receiver' => $gift->recipient->ID
 					));
 				} else {
 					$result['success'] = false;
