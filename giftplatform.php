@@ -3,7 +3,7 @@
  * Plugin Name:       GIFT platform plugin
  * Plugin URI:        https://github.com/growlingfish/giftplatform
  * Description:       WordPress admin and server for GIFT project digital gifting platform
- * Version:           0.0.7.2
+ * Version:           0.0.7.3
  * Author:            Ben Bedwell
  * License:           GNU General Public License v3
  * License URI:       http://www.gnu.org/licenses/gpl-3.0.html
@@ -121,13 +121,15 @@ function gift_v2_register_api_hooks () {
 			'user' => array(
 				'validate_callback' => function ($param, $request, $key) {
 					return username_exists($param);
-				}
+				},
+				'required' => true
 			),
 			'pass' => array(
 				'validate_callback' => function($param, $request, $key) {
 					$user = get_user_by('login', $request['user']);
 					return wp_check_password($request['pass'], $user->data->user_pass, $user->ID);
-				}
+				},
+				'required' => true
 			)
 		)
 	) );
@@ -138,7 +140,8 @@ function gift_v2_register_api_hooks () {
 			'id' => array(
 				'validate_callback' => function ($param, $request, $key) {
 					return is_numeric($param) && get_user_by('ID', $param);
-				}
+				},
+				'required' => true
 			)
 		)
 	) );
@@ -149,7 +152,8 @@ function gift_v2_register_api_hooks () {
 			'id' => array(
 				'validate_callback' => function ($param, $request, $key) {
 					return is_numeric($param) && get_user_by('ID', $param);
-				}
+				},
+				'required' => true
 			)
 		)
 	) );
@@ -160,7 +164,8 @@ function gift_v2_register_api_hooks () {
 			'id' => array(
 				'validate_callback' => function ($param, $request, $key) {
 					return is_numeric($param) && get_user_by('ID', $param);
-				}
+				},
+				'required' => true
 			)
 		)
 	) );
@@ -171,7 +176,8 @@ function gift_v2_register_api_hooks () {
 			'id' => array(
 				'validate_callback' => function ($param, $request, $key) {
 					return is_numeric($param) && get_user_by('ID', $param);
-				}
+				},
+				'required' => true
 			)
 		)
 	) );
@@ -186,12 +192,14 @@ function gift_v2_register_api_hooks () {
 			'email' => array(
 				'validate_callback' => function ($param, $request, $key) {
 					return filter_var($param, FILTER_VALIDATE_EMAIL);
-				}
+				},
+				'required' => true
 			),
 			'from' => array(
 				'validate_callback' => function ($param, $request, $key) {
 					return is_numeric($param) && get_user_by('ID', $param);
-				}
+				},
+				'required' => true
 			)
 		)
 	) );
@@ -202,12 +210,20 @@ function gift_v2_register_api_hooks () {
 			'username' => array(
 				'validate_callback' => function ($param, $request, $key) {
 					return !username_exists($param);
-				}
+				},
+				'required' => true
+			),
+			'pass' => array(
+				'required' => true
 			),
 			'email' => array(
 				'validate_callback' => function ($param, $request, $key) {
 					return filter_var($param, FILTER_VALIDATE_EMAIL) && !email_exists($param);
-				}
+				},
+				'required' => true
+			),
+			'name' => array(
+				'required' => true
 			)
 		)
 	) );
@@ -218,7 +234,8 @@ function gift_v2_register_api_hooks () {
 			'owner' => array(
 				'validate_callback' => function ($param, $request, $key) {
 					return is_numeric($param) && get_user_by('ID', $param);
-				}
+				},
+				'required' => true
 			)
 		)
 	) );
@@ -229,7 +246,8 @@ function gift_v2_register_api_hooks () {
 			'sender' => array(
 				'validate_callback' => function ($param, $request, $key) {
 					return is_numeric($param) && get_user_by('ID', $param);
-				}
+				},
+				'required' => true
 			)
 		)
 	) );
@@ -240,7 +258,8 @@ function gift_v2_register_api_hooks () {
 			'id' => array(
 				'validate_callback' => function ($param, $request, $key) {
 					return is_numeric($param) && is_string( get_post_status( $param ) );
-				}
+				},
+				'required' => true
 			)
 		)
 	) );/*
@@ -262,7 +281,8 @@ function gift_v2_register_api_hooks () {
 			'id' => array(
 				'validate_callback' => function ($param, $request, $key) {
 					return is_numeric($param) && is_string( get_post_status( $param ) );
-				}
+				},
+				'required' => true
 			)
 		)
 	) );/*
