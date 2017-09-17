@@ -236,6 +236,12 @@ function gift_v2_register_api_hooks () {
 					return is_numeric($param) && get_user_by('ID', $param);
 				},
 				'required' => true
+			),
+			'object' => array(
+				'required' => true
+			),
+			'name' => array(
+				'required' => true
 			)
 		)
 	) );
@@ -247,6 +253,9 @@ function gift_v2_register_api_hooks () {
 				'validate_callback' => function ($param, $request, $key) {
 					return is_numeric($param) && get_user_by('ID', $param);
 				},
+				'required' => true
+			),
+			'gift' => array(
 				'required' => true
 			)
 		)
