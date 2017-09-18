@@ -679,7 +679,7 @@ function unwrap_gift ($request) {
 	require_once('lib/rest.php');
 	curl_post('https://chat.gifting.digital/api/', array(
 		'type' => '103', //types->unwrappedGift
-		'gift' => $id,
+		'id' => $id,
 		'sender' => $gift->post_author,
 		'sender_nickname' => $userdata->nickname,
 		'receipient' => $request['recipient'],
