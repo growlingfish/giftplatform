@@ -195,6 +195,9 @@ function gift_v2_register_api_hooks () {
 				},
 				'required' => true
 			),
+			'name' => array(
+				'required' => true
+			),
 			'from' => array(
 				'validate_callback' => function ($param, $request, $key) {
 					return is_numeric($param) && get_user_by('ID', $param);
@@ -828,7 +831,7 @@ function setup_gift ($request) {
 		$gift = json_decode(stripslashes($request['gift']));
 
 		$giftcard_post = array(
-			'post_title'    => wp_strip_all_tags( $gift->giftcards[0]->post_title ),
+			'post_title'    => 'Giftcard for '.wp_strip_all_tags( $gift->post_title ),
 			'post_content'  => wp_strip_all_tags( $gift->giftcards[0]->post_content ),
 			'post_status'   => 'publish',
 			'post_author'   => $request['sender'],
