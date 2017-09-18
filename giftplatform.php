@@ -263,13 +263,19 @@ function gift_v2_register_api_hooks () {
 			)
 		)
 	) );
-	register_rest_route( $namespace.'/v'.$version, '/unwrapped/gift/(?P<id>.+)/', array(
+	register_rest_route( $namespace.'/v'.$version, '/unwrapped/gift/(?P<id>.+)/(?P<recipient>.+)/', array(
 		'methods'  => 'GET',
 		'callback' => 'unwrap_gift',
 		'args' => array(
 			'id' => array(
 				'validate_callback' => function ($param, $request, $key) {
 					return is_numeric($param) && is_string( get_post_status( $param ) );
+				},
+				'required' => true
+			),
+			'recipient' => array(
+				'validate_callback' => function ($param, $request, $key) {
+					return is_numeric($param) && get_user_by('ID', $param);
 				},
 				'required' => true
 			)
@@ -286,13 +292,19 @@ function gift_v2_register_api_hooks () {
 			)
 		)
 	) );*/
-	register_rest_route( $namespace.'/v'.$version, '/received/gift/(?P<id>.+)/', array(
+	register_rest_route( $namespace.'/v'.$version, '/received/gift/(?P<id>.+)/(?P<recipient>.+)/', array(
 		'methods'  => 'GET',
 		'callback' => 'received_gift',
 		'args' => array(
 			'id' => array(
 				'validate_callback' => function ($param, $request, $key) {
 					return is_numeric($param) && is_string( get_post_status( $param ) );
+				},
+				'required' => true
+			),
+			'recipient' => array(
+				'validate_callback' => function ($param, $request, $key) {
+					return is_numeric($param) && get_user_by('ID', $param);
 				},
 				'required' => true
 			)
@@ -661,6 +673,16 @@ function unwrap_gift ($request) {
 
 	update_field('unwrapped', 1, $id);
 
+	$gift = get_post($id);
+
+	require_once('lib/rest.php');
+	curl_post('https://chat.gifting.digital/api/', array(
+		'type' => '103', //types->unwrappedGift
+		'id' => $id,
+		'sender' => $gift->post_author,
+		'receipient' => $request['recipient']
+	));
+
 	$response = new WP_REST_Response( $result );
 	$response->set_status( 200 );
 	$response->header( 'Access-Control-Allow-Origin', '*' );
@@ -690,6 +712,16 @@ function received_gift ($request) {
 	);
 
 	update_field('received', 1, $id);
+
+	$gift = get_post($id);
+
+	require_once('lib/rest.php');
+	curl_post('https://chat.gifting.digital/api/', array(
+		'type' => '102', //types->receivedGift
+		'id' => $id,
+		'sender' => $gift->post_author,
+		'receipient' => $request['recipient']
+	));
 
 	$response = new WP_REST_Response( $result );
 	$response->set_status( 200 );
