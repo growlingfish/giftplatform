@@ -558,6 +558,7 @@ function get_objects ($request) {
 		if ($owner == null || $owner['ID'] == $user->ID) { // object belongs to no-one or this user
 			$object->post_image = get_the_post_thumbnail_url($object->ID, 'thumbnail');
 			$object->post_content = wpautop($object->post_content);
+			$object->location = get_field('field_59a85fff4be5a', $object->ID);
 			$result['objects'][] = $object;
 		}
 	}
@@ -682,7 +683,7 @@ function unwrap_gift ($request) {
 		'id' => $id,
 		'sender' => $gift->post_author,
 		'sender_nickname' => $userdata->nickname,
-		'receipient' => $request['recipient'],
+		'recipient' => $request['recipient'],
 		'title' => $gift->post_title,
 		'status' => 'unwrapped'
 	));
@@ -726,7 +727,7 @@ function received_gift ($request) {
 		'id' => $id,
 		'sender' => $gift->post_author,
 		'sender_nickname' => $userdata->nickname,
-		'receipient' => $request['recipient'],
+		'recipient' => $request['recipient'],
 		'title' => $gift->post_title,
 		'status' => 'received'
 	));
