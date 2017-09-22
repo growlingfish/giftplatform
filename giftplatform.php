@@ -296,6 +296,9 @@ function gift_v2_register_api_hooks () {
 			),
 			'sender' => array(
 				'required' => true
+			),
+			'owner' => array(
+				'required' => true
 			)
 		)
 	) );
@@ -729,6 +732,7 @@ function respond_to_gift ($request) {
 		curl_post('https://chat.gifting.digital/api/', array(
 			'type' => '100', //types->responseToGift
 			'response' => $request['response'],
+			'owner' => $request['owner'],
 			'sender_nickname' => $userdata->nickname,
 			'status' => 'responded'
 		));
