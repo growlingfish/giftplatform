@@ -293,6 +293,9 @@ function gift_v2_register_api_hooks () {
 			),
 			'response' => array(
 				'required' => true
+			),
+			'sender' => array(
+				'required' => true
 			)
 		)
 	) );
@@ -699,13 +702,37 @@ function unwrap_gift ($request) {
 }
 
 function respond_to_gift ($request) {
-	$id = $request['id'];
+	$giftId = $request['id'];
 
 	$result = array(
 		'success' => true
 	);
 
-	update_field('responded', 1, $id);
+	update_field('responded', 1, $giftId);
+
+	$my_response = array(
+		'post_content'  => $request['response'],
+		'post_status'   => 'publish',
+		'post_author'   => $request['sender'],
+		'post_type'		=> 'response'
+	);
+	
+	$post_id = wp_insert_post( $my_response );
+	if(!is_wp_error($post_id)){
+		update_field( 'gift', $giftId, $post_id ); //field_59c4cdc1f07f6
+
+		$result['response'] = $post_id;
+
+		$userdata = get_userdata($request['sender']);
+
+		require_once('lib/rest.php');
+		curl_post('https://chat.gifting.digital/api/', array(
+			'type' => '100', //types->responseToGift
+			'response' => $request['response'],
+			'sender_nickname' => $userdata->nickname,
+			'status' => 'responded'
+		));
+	}
 
 	$response = new WP_REST_Response( $result );
 	$response->set_status( 200 );
