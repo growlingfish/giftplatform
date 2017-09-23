@@ -629,10 +629,14 @@ function get_responses ($request) {
 	$responses = get_posts($query);
 	foreach ($responses as $response) {
 		if ($response->post_author == $request['id']) {
+			$response->$gift = get_field( 'field_59c4cdc1f07f6', $response->ID );
+			$response->post_author_data = get_userdata($response->post_author);
 			$result['responses']['sent'][] = $response;
 		} else {
 			$gift = get_field( 'field_59c4cdc1f07f6', $response->ID );
 			if ($gift->post_author == $request['id']) {
+				$response->gift = $gift;
+				$response->post_author_data = get_userdata($response->post_author);
 				$result['responses']['received'][] = $response;
 			}
 		}
