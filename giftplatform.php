@@ -630,15 +630,19 @@ function get_responses ($request) {
 	foreach ($responses as $response) {
 		if ($response->post_author == $request['id']) {
 			$response->gift = get_field( 'field_59c4cdc1f07f6', $response->ID );
-			$response->post_author_data = get_userdata($response->post_author)->data;
-			$response->post_author_data->avatar = get_avatar_url( $response->post_author, 32 );
+			$response->post_author_data = array(
+				"nickname" 	=> get_userdata($response->post_author)->nickname,
+				"avatar" 	=> get_avatar_url( $response->post_author, 32 )
+			);
 			$result['responses']['sent'][] = $response;
 		} else {
 			$gift = get_field( 'field_59c4cdc1f07f6', $response->ID );
 			if ($gift->post_author == $request['id']) {
 				$response->gift = $gift;
-				$response->post_author_data = get_userdata($response->post_author)->data;
-				$response->post_author_data->avatar = get_avatar_url( $response->post_author, 32 );
+				$response->post_author_data = array(
+					"nickname" 	=> get_userdata($response->post_author)->nickname,
+					"avatar" 	=> get_avatar_url( $response->post_author, 32 )
+				);
 				$result['responses']['received'][] = $response;
 			}
 		}
