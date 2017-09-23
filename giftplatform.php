@@ -3,7 +3,7 @@
  * Plugin Name:       GIFT platform plugin
  * Plugin URI:        https://github.com/growlingfish/giftplatform
  * Description:       WordPress admin and server for GIFT project digital gifting platform
- * Version:           0.0.7.4
+ * Version:           0.0.7.5
  * Author:            Ben Bedwell
  * License:           GNU General Public License v3
  * License URI:       http://www.gnu.org/licenses/gpl-3.0.html
@@ -184,6 +184,18 @@ function gift_v2_register_api_hooks () {
 	register_rest_route( $namespace.'/v'.$version, '/locations/', array(
 		'methods'  => 'GET',
 		'callback' => 'get_locations'
+	) );
+	register_rest_route( $namespace.'/v'.$version, '/responses/(?P<id>.+)/', array(
+		'methods'  => 'GET',
+		'callback' => 'get_responses',
+		'args' => array(
+			'id' => array(
+				'validate_callback' => function ($param, $request, $key) {
+					return is_numeric($param) && get_user_by('ID', $param);
+				},
+				'required' => true
+			)
+		)
 	) );
 	register_rest_route( $namespace.'/v'.$version, '/new/receiver/(?P<email>.+)/(?P<name>.+)/(?P<from>.+)', array(
 		'methods'  => 'GET',
@@ -591,6 +603,40 @@ function get_locations ($request) {
 		'success' => true,
 		'locations' => get_posts( $query )
 	);
+
+	$response = new WP_REST_Response( $result );
+	$response->set_status( 200 );
+	$response->header( 'Access-Control-Allow-Origin', '*' );
+	
+	return $response;
+}
+
+function get_responses ($request) {
+	$query = array(
+		'numberposts'   => -1,
+		'post_type'     => 'response',
+		'post_status'   => 'publish'
+	);
+
+	$result = array(
+		'success' => true,
+		'responses' => array(
+			'sent' => array(),
+			'received' => array()
+		)
+	);
+
+	$responses = get_posts($query);
+	foreach ($responses as $response) {
+		if ($response->post_author == $request['id']) {
+			$result['responses']['sent'][] = $response;
+		} else {
+			$gift = get_field( 'field_59c4cdc1f07f6', $response->ID );
+			if ($gift->post_author == $request['id']) {
+				$result['responses']['received'][] = $response;
+			}
+		}
+	}
 
 	$response = new WP_REST_Response( $result );
 	$response->set_status( 200 );
