@@ -685,15 +685,17 @@ function unwrap_gift ($request) {
 	update_field('unwrapped', 1, $id);
 
 	$gift = get_post($id);
-	$userdata = get_userdata($gift->post_author);
+	$sender_userdata = get_userdata($gift->post_author);
+	$recipient_userdata = get_userdata($request['recipient']);
 
 	require_once('lib/rest.php');
 	curl_post('https://chat.gifting.digital/api/', array(
 		'type' => '103', //types->unwrappedGift
 		'id' => $id,
 		'sender' => $gift->post_author,
-		'sender_nickname' => $userdata->nickname,
+		'sender_nickname' => $sender_userdata->nickname,
 		'recipient' => $request['recipient'],
+		'recipient_nickname' => $recipient_userdata->nickname,
 		'title' => $gift->post_title,
 		'status' => 'unwrapped'
 	));
@@ -733,6 +735,7 @@ function respond_to_gift ($request) {
 			'type' => '100', //types->responseToGift
 			'response' => $request['response'],
 			'owner' => $request['owner'],
+			'sender' => $request['sender'],
 			'sender_nickname' => $userdata->nickname,
 			'status' => 'responded'
 		));
@@ -754,15 +757,17 @@ function received_gift ($request) {
 	update_field('received', 1, $id);
 
 	$gift = get_post($id);
-	$userdata = get_userdata($gift->post_author);
+	$sender_userdata = get_userdata($gift->post_author);
+	$recipient_userdata = get_userdata($request['recipient']);
 
 	require_once('lib/rest.php');
 	curl_post('https://chat.gifting.digital/api/', array(
 		'type' => '102', //types->receivedGift
 		'id' => $id,
 		'sender' => $gift->post_author,
-		'sender_nickname' => $userdata->nickname,
+		'sender_nickname' => $sender_userdata->nickname,
 		'recipient' => $request['recipient'],
+		'recipient_nickname' => $recipient_userdata->nickname,
 		'title' => $gift->post_title,
 		'status' => 'received'
 	));
