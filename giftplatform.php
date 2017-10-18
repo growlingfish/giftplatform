@@ -106,6 +106,7 @@ function render_wrap_geo_meta_box ( $post ) { ?>
 }
 
 define('TOKENLENGTH', 48);
+define('TOKENTABLE', 'gift_tokens');
 
 global $gift_token_version;
 $gift_token_version = '0.0.0.1';
@@ -118,7 +119,7 @@ function gift_tokendb_install () {
 	require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
 	
 	// Locations
-	$table_name = $wpdb->prefix . "gift_tokens"; 
+	$table_name = $wpdb->prefix . TOKENTABLE; 
 	$sql = "CREATE TABLE $table_name (
   		id BIGINT(20) NOT NULL AUTO_INCREMENT,
   		userId BIGINT(20) NOT NULL,
@@ -142,8 +143,27 @@ function gift_tokendb_check () {
 }
 add_action( 'plugins_loaded', 'gift_tokendb_check' );
 
-function generate_token () {
-	return bin2hex(random_bytes(TOKENLENGTH));
+function generate_token ($userId, $apiVersion) {
+	$token = bin2hex(random_bytes(TOKENLENGTH));
+
+	global $wpdb;
+	if ($wpdb->insert( 
+		$wpdb->prefix . TOKENTABLE, 
+		array( 
+			'userId' => $userId,
+			'token' => $token,
+			'apiVersion' => $apiVersion
+		), 
+		array( 
+			'%d', 
+			'%s',
+			'%s'
+		)
+	)) {
+		return $token;
+	} else {
+		return null;
+	}	
 }
 
 /*
@@ -383,12 +403,19 @@ function gift_v2_register_api_hooks () {
 
 function gift_auth ($request) {
 	$user = get_user_by('login', $request['user']);
+	unset($user->allcaps, $user->caps, $user->cap_key, $user->filter);
 
 	$result = array(
 		'user' => $user,
-		'token' => generate_token(),
-		'success' => true
+		'token' => null,
+		'success' => false
 	);
+
+	$token = generate_token($user->ID, '2');
+	if ($token != null) {
+		$result['token'] = $token;
+		$result['success'] = true;
+	}
 
 	$response = new WP_REST_Response( $result );
 	$response->set_status( 200 );
