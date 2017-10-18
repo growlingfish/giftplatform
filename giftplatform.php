@@ -144,7 +144,7 @@ function gift_tokendb_check () {
 add_action( 'plugins_loaded', 'gift_tokendb_check' );
 
 function generate_token ($userId, $apiVersion) {
-	$token = bin2hex(random_bytes(TOKENLENGTH));
+	$token = substr(bin2hex(random_bytes(TOKENLENGTH)), 0, TOKENLENGTH);
 
 	$expiresAt = new DateTime('+1 day');
 
