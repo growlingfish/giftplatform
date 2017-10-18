@@ -124,7 +124,7 @@ function gift_tokendb_install () {
   		id BIGINT(20) NOT NULL AUTO_INCREMENT,
   		userId BIGINT(20) NOT NULL,
   		issuedAt DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
-		expiresAt DATETIME DEFAULT DATE_ADD(CURRENT_TIMESTAMP, INTERVAL 1 DAY) NOT NULL,
+		expiresAt DATETIME NOT NULL,
   		token VARCHAR(".TOKENLENGTH.") NOT NULL,
   		apiVersion VARCHAR(10) NOT NULL,  
   		UNIQUE KEY id (id)
@@ -136,7 +136,7 @@ function gift_tokendb_install () {
 register_activation_hook( __FILE__, 'gift_tokendb_install' );
 
 function gift_tokendb_check () {
-    global $gift_token_version;
+	global $gift_token_version;
     if ( get_site_option( 'gift_token_version' ) != $gift_token_version ) {
         gift_tokendb_install();
     }
@@ -146,16 +146,20 @@ add_action( 'plugins_loaded', 'gift_tokendb_check' );
 function generate_token ($userId, $apiVersion) {
 	$token = bin2hex(random_bytes(TOKENLENGTH));
 
+	$expiresAt = new DateTime('+1 day');
+
 	global $wpdb;
 	if ($wpdb->insert( 
 		$wpdb->prefix . TOKENTABLE, 
 		array( 
 			'userId' => $userId,
 			'token' => $token,
+			'expiresAt' => $expiresAt->format('Y-m-d H:i:s'),
 			'apiVersion' => $apiVersion
 		), 
 		array( 
 			'%d', 
+			'%s',
 			'%s',
 			'%s'
 		)
