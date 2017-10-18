@@ -105,6 +105,47 @@ function render_wrap_geo_meta_box ( $post ) { ?>
 <?php	
 }
 
+define('TOKENLENGTH', 48);
+
+global $gift_token_version;
+$gift_token_version = '0.0.0.1';
+
+// Create databases to store saves
+function gift_tokendb_install () {
+	global $wpdb;
+	global $gift_token_version;
+	$charset_collate = $wpdb->get_charset_collate();
+	require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
+	
+	// Locations
+	$table_name = $wpdb->prefix . "gift_tokens"; 
+	$sql = "CREATE TABLE $table_name (
+  		id BIGINT(20) NOT NULL AUTO_INCREMENT,
+  		userId BIGINT(20) NOT NULL,
+  		issuedAt DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
+		expiresAt DATETIME DEFAULT DATE_ADD(CURRENT_TIMESTAMP, INTERVAL 1 DAY) NOT NULL,
+  		token VARCHAR(".TOKENLENGTH.") NOT NULL,
+  		apiVersion VARCHAR(10) NOT NULL,  
+  		UNIQUE KEY id (id)
+	) $charset_collate;";
+	dbDelta( $sql );
+	
+	add_option( 'gift_token_version', $gift_token_version );
+}
+register_activation_hook( __FILE__, 'gift_tokendb_install' );
+
+function gift_tokendb_check () {
+    global $gift_token_version;
+    if ( get_site_option( 'gift_token_version' ) != $gift_token_version ) {
+        gift_tokendb_install();
+    }
+}
+add_action( 'plugins_loaded', 'gift_tokendb_check' );
+
+function generate_token () {
+	return bin2hex(random_bytes(TOKENLENGTH));
+}
+
 /*
 *	Custom API end-points: year 1 review
 */
@@ -333,18 +374,7 @@ function gift_v2_register_api_hooks () {
 				'required' => true
 			)
 		)
-	) );/*
-	register_rest_route( $namespace.'/v'.$version, '/validate/receiver/(?P<email>.+)/', array(
-		'methods'  => 'GET',
-		'callback' => 'validate_receiver',
-		'args' => array(
-			'email' => array(
-				'validate_callback' => function ($param, $request, $key) {
-					return filter_var($param, FILTER_VALIDATE_EMAIL);
-				}
-			)
-		)
-	) );*/
+	) );
 	register_rest_route( $namespace.'/v'.$version, '/upload/object/', array(
 		'methods'  => 'POST',
 		'callback' => 'upload'
@@ -356,6 +386,7 @@ function gift_auth ($request) {
 
 	$result = array(
 		'user' => $user,
+		'token' => generate_token(),
 		'success' => true
 	);
 
