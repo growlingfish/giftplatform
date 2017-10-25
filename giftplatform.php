@@ -466,8 +466,8 @@ function get_data ($request) {
 		'post_status'   => array('publish'),
 		'date_query' => array(
 			array(
-				'after' => '2017-09-27 00:00:00',
-				'before' => '2017-09-27 23:59:59'
+				'after' => '2017-09-28 00:00:00',
+				'before' => '2017-09-28 23:59:59'
 			)
 		)
 	);
@@ -480,6 +480,35 @@ function get_data ($request) {
 			//$gift->wraps = get_field('wrap', $gift->ID);
 			$gift->wraps = get_field('field_58e4f5da816ac', $gift->ID);
 			foreach ($gift->wraps as &$wrap) {
+				unset(
+					$wrap->post_date_gmt,
+					$wrap->post_title,
+					$wrap->post_excerpt,
+					$wrap->comment_status,
+					$wrap->ping_status,
+					$wrap->post_password,
+					$wrap->to_ping,
+					$wrap->pinged,
+					$wrap->post_modified_gmt,
+					$wrap->post_content_filtered,
+					$wrap->post_parent,
+					$wrap->post_mime_type,
+					$wrap->comment_count,
+					$wrap->filter,
+					$wrap->unwrap_object->post_date_gmt,
+					$wrap->unwrap_object->post_excerpt,
+					$wrap->unwrap_object->comment_status,
+					$wrap->unwrap_object->ping_status,
+					$wrap->unwrap_object->post_password,
+					$wrap->unwrap_object->to_ping,
+					$wrap->unwrap_object->pinged,
+					$wrap->unwrap_object->post_modified_gmt,
+					$wrap->unwrap_object->post_content_filtered,
+					$wrap->unwrap_object->post_parent,
+					$wrap->unwrap_object->post_mime_type,
+					$wrap->unwrap_object->comment_count,
+					$wrap->unwrap_object->filter
+				);
 				//$wrap->unwrap_object = get_field('object', $wrap->ID);
 				$wrap->unwrap_object = get_field('field_595b4a2bc9c1c', $wrap->ID);
 				if (is_array($wrap->unwrap_object) && count($wrap->unwrap_object) > 0) {
@@ -500,11 +529,44 @@ function get_data ($request) {
 				//$gift->payloads = get_field('payload', $gift->ID);
 				$gift->payloads = get_field('field_58e4f689655ef', $gift->ID);
 				foreach ($gift->payloads as &$payload) {
+					unset(
+						$payload->post_date_gmt,
+						$payload->post_title,
+						$payload->post_excerpt,
+						$payload->comment_status,
+						$payload->ping_status,
+						$payload->post_password,
+						$payload->to_ping,
+						$payload->pinged,
+						$payload->post_modified_gmt,
+						$payload->post_content_filtered,
+						$payload->post_parent,
+						$payload->post_mime_type,
+						$payload->comment_count,
+						$payload->filter
+					);
 					$payload->post_content = wpautop($payload->post_content);
 				}
 				//$gift->giftcards = get_field('gift_card', $gift->ID);
 				$gift->giftcards = get_field('field_5964a5787eb68', $gift->ID);
 				foreach ($gift->giftcards as &$giftcard) {
+					unset(
+						$giftcard->post_date_gmt,
+						$giftcard->post_title,
+						$giftcard->post_excerpt,
+						$giftcard->comment_status,
+						$giftcard->ping_status,
+						$giftcard->post_password,
+						$giftcard->to_ping,
+						$giftcard->pinged,
+						$giftcard->post_modified_gmt,
+						$giftcard->post_content_filtered,
+						$giftcard->post_parent,
+						$giftcard->menu_order,
+						$giftcard->post_mime_type,
+						$giftcard->comment_count,
+						$giftcard->filter
+					);
 					$giftcard->post_content = wpautop($giftcard->post_content);
 				}
 				$gift->status = array(
@@ -514,6 +576,29 @@ function get_data ($request) {
 					'unwrapped' => get_field('field_595e0593bd980', $gift->ID),
 					//'responded' => get_field('responded', $gift->ID)
 					'responded' => get_field('field_595e05c8bd981', $gift->ID)
+				);
+				unset(
+					$gift->post_date_gmt,
+					$gift->post_content,
+					$gift->post_title,
+					$gift->post_excerpt,
+					$gift->comment_status,
+					$gift->ping_status,
+					$gift->post_password,
+					$gift->to_ping,
+					$gift->pinged,
+					$gift->post_modified_gmt,
+					$gift->post_content_filtered,
+					$gift->post_parent,
+					$gift->menu_order,
+					$gift->post_mime_type,
+					$gift->comment_count,
+					$gift->filter,
+					$gift->recipient->user_nicename,
+					$gift->recipient->user_url,
+					$gift->recipient->user_registered,
+					$gift->recipient->user_description,
+					$gift->recipient->user_avatar
 				);
 				$result['gifts'][] = $gift;
 			}
