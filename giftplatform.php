@@ -533,7 +533,7 @@ function get_data ($request) {
 					$wrap->unwrap_object->filter
 				);
 				$location = get_field('field_59a85fff4be5a', $wrap->unwrap_object->ID);
-				$wrap->unwrap_object->location = $location->post_title;
+				$wrap->unwrap_object->location = $location[0]->post_title;
 			}
 
 			if ($hasObject) {
