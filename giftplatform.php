@@ -477,6 +477,13 @@ function get_data ($request) {
 		$recipients = get_field( 'field_58e4f6e88f3d7', $gift->ID );
 		foreach ($recipients as $recipient) {
 			$gift->recipient = $recipient;
+			unset(
+				$gift->recipient->user_nicename,
+				$gift->recipient->user_url,
+				$gift->recipient->user_registered,
+				$gift->recipient->user_description,
+				$gift->recipient->user_avatar
+			);
 			//$gift->wraps = get_field('wrap', $gift->ID);
 			$gift->wraps = get_field('field_58e4f5da816ac', $gift->ID);
 			foreach ($gift->wraps as &$wrap) {
@@ -494,20 +501,7 @@ function get_data ($request) {
 					$wrap->post_parent,
 					$wrap->post_mime_type,
 					$wrap->comment_count,
-					$wrap->filter,
-					$wrap->unwrap_object->post_date_gmt,
-					$wrap->unwrap_object->post_excerpt,
-					$wrap->unwrap_object->comment_status,
-					$wrap->unwrap_object->ping_status,
-					$wrap->unwrap_object->post_password,
-					$wrap->unwrap_object->to_ping,
-					$wrap->unwrap_object->pinged,
-					$wrap->unwrap_object->post_modified_gmt,
-					$wrap->unwrap_object->post_content_filtered,
-					$wrap->unwrap_object->post_parent,
-					$wrap->unwrap_object->post_mime_type,
-					$wrap->unwrap_object->comment_count,
-					$wrap->unwrap_object->filter
+					$wrap->filter
 				);
 				//$wrap->unwrap_object = get_field('object', $wrap->ID);
 				$wrap->unwrap_object = get_field('field_595b4a2bc9c1c', $wrap->ID);
@@ -523,6 +517,22 @@ function get_data ($request) {
 					$wrap->unwrap_object->post_image = get_the_post_thumbnail_url($wrap->unwrap_object->ID, 'large');
 					$wrap->unwrap_object->post_content = wpautop($wrap->unwrap_object->post_content);
 				}
+				unset(
+					$wrap->unwrap_object->post_date_gmt,
+					$wrap->unwrap_object->post_excerpt,
+					$wrap->unwrap_object->comment_status,
+					$wrap->unwrap_object->ping_status,
+					$wrap->unwrap_object->post_password,
+					$wrap->unwrap_object->to_ping,
+					$wrap->unwrap_object->pinged,
+					$wrap->unwrap_object->post_modified_gmt,
+					$wrap->unwrap_object->post_content_filtered,
+					$wrap->unwrap_object->post_parent,
+					$wrap->unwrap_object->post_mime_type,
+					$wrap->unwrap_object->comment_count,
+					$wrap->unwrap_object->filter
+				);
+				$wrap->unwrap_object->location = get_field('field_59a85fff4be5a', $wrap->unwrap_object->ID);
 			}
 
 			if ($hasObject) {
