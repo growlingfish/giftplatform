@@ -532,7 +532,8 @@ function get_data ($request) {
 					$wrap->unwrap_object->comment_count,
 					$wrap->unwrap_object->filter
 				);
-				$wrap->unwrap_object->location = get_field('field_59a85fff4be5a', $wrap->unwrap_object->ID);
+				$location = get_field('field_59a85fff4be5a', $wrap->unwrap_object->ID);
+				$wrap->unwrap_object->location = $location->post_title;
 			}
 
 			if ($hasObject) {
