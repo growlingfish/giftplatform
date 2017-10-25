@@ -463,7 +463,13 @@ function get_data ($request) {
 	$query = array(
 		'numberposts'   => -1,
 		'post_type'     => 'gift',
-		'post_status'   => array('publish')
+		'post_status'   => array('publish'),
+		'date_query' => array(
+			array(
+				'after' => '2017-09-27 00:00:00',
+				'before' => '2017-09-27 23:59:59'
+			)
+		)
 	);
 	$all_gifts = get_posts( $query );
 	foreach ($all_gifts as $gift) {
