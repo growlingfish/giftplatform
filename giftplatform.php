@@ -525,6 +525,7 @@ function get_data ($request) {
 					$wrap->unwrap_object->post_password,
 					$wrap->unwrap_object->to_ping,
 					$wrap->unwrap_object->pinged,
+					$wrap->unwrap_object->menu_order,
 					$wrap->unwrap_object->post_modified_gmt,
 					$wrap->unwrap_object->post_content_filtered,
 					$wrap->unwrap_object->post_parent,
