@@ -3,7 +3,7 @@
  * Plugin Name:       GIFT platform plugin
  * Plugin URI:        https://github.com/growlingfish/giftplatform
  * Description:       WordPress admin and server for GIFT project digital gifting platform
- * Version:           0.1.0.1
+ * Version:           0.1.0.2
  * Author:            Ben Bedwell
  * License:           GNU General Public License v3
  * License URI:       http://www.gnu.org/licenses/gpl-3.0.html
@@ -169,20 +169,20 @@ function generate_token ($userId, $apiVersion) {
 	}	
 }
 
+$namespace = 'gift';
+
 /*
 *	Custom API end-points: year 1 review
 */
 
-$namespace = 'gift';
-
-add_action( 'rest_api_init', 'gift_v2_register_api_hooks' );
-function gift_v2_register_api_hooks () {
+add_action( 'rest_api_init', 'gift_v3_register_api_hooks' );
+function gift_v3_register_api_hooks () {
 	global $namespace;
-	$version = 2;
+	$version = 3;
 	
 	register_rest_route( $namespace.'/v'.$version, '/auth/(?P<user>.+)/(?P<pass>.+)', array(
 		'methods'  => 'GET',
-		'callback' => 'gift_auth',
+		'callback' => 'v3_gift_auth',
 		'args' => array(
 			'user' => array(
 				'validate_callback' => function ($param, $request, $key) {
@@ -199,7 +199,7 @@ function gift_v2_register_api_hooks () {
 			)
 		)
 	) );
-	register_rest_route( $namespace.'/v'.$version, '/gifts/received/(?P<id>.+)/', array(
+	/*register_rest_route( $namespace.'/v'.$version, '/gifts/received/(?P<id>.+)/', array(
 		'methods'  => 'GET',
 		'callback' => 'get_received_gifts',
 		'args' => array(
@@ -405,10 +405,10 @@ function gift_v2_register_api_hooks () {
 	register_rest_route( $namespace.'/v'.$version, '/upload/object/', array(
 		'methods'  => 'POST',
 		'callback' => 'upload'
-	) );
+	) );*/
 }
 
-function gift_auth ($request) {
+function v3_gift_auth ($request) {
 	$user = get_user_by('login', $request['user']);
 	unset($user->allcaps, $user->caps, $user->cap_key, $user->filter);
 
@@ -418,7 +418,7 @@ function gift_auth ($request) {
 		'success' => false
 	);
 
-	$token = generate_token($user->ID, '2');
+	$token = generate_token($user->ID, '3');
 	if ($token != null) {
 		$result['token'] = $token;
 		$result['success'] = true;
@@ -431,7 +431,261 @@ function gift_auth ($request) {
 	return $response;
 }
 
-function get_contacts ($request) {
+/*
+*	Custom API end-points: second Brighton sprint
+*/
+
+add_action( 'rest_api_init', 'gift_v2_register_api_hooks' );
+function gift_v2_register_api_hooks () {
+	global $namespace;
+	$version = 2;
+	
+	register_rest_route( $namespace.'/v'.$version, '/auth/(?P<user>.+)/(?P<pass>.+)', array(
+		'methods'  => 'GET',
+		'callback' => 'v2_gift_auth',
+		'args' => array(
+			'user' => array(
+				'validate_callback' => function ($param, $request, $key) {
+					return username_exists($param);
+				},
+				'required' => true
+			),
+			'pass' => array(
+				'validate_callback' => function($param, $request, $key) {
+					$user = get_user_by('login', $request['user']);
+					return wp_check_password($request['pass'], $user->data->user_pass, $user->ID);
+				},
+				'required' => true
+			)
+		)
+	) );
+	register_rest_route( $namespace.'/v'.$version, '/gifts/received/(?P<id>.+)/', array(
+		'methods'  => 'GET',
+		'callback' => 'v2_get_received_gifts',
+		'args' => array(
+			'id' => array(
+				'validate_callback' => function ($param, $request, $key) {
+					return is_numeric($param) && get_user_by('ID', $param);
+				},
+				'required' => true
+			)
+		)
+	) );
+	register_rest_route( $namespace.'/v'.$version, '/gifts/sent/(?P<id>.+)/', array(
+		'methods'  => 'GET',
+		'callback' => 'v2_get_sent_gifts',
+		'args' => array(
+			'id' => array(
+				'validate_callback' => function ($param, $request, $key) {
+					return is_numeric($param) && get_user_by('ID', $param);
+				},
+				'required' => true
+			)
+		)
+	) );
+	register_rest_route( $namespace.'/v'.$version, '/contacts/(?P<id>.+)/', array(
+		'methods'  => 'GET',
+		'callback' => 'v2_get_contacts',
+		'args' => array(
+			'id' => array(
+				'validate_callback' => function ($param, $request, $key) {
+					return is_numeric($param) && get_user_by('ID', $param);
+				},
+				'required' => true
+			)
+		)
+	) );
+	register_rest_route( $namespace.'/v'.$version, '/objects/(?P<id>.+)/', array(
+		'methods'  => 'GET',
+		'callback' => 'v2_get_objects',
+		'args' => array(
+			'id' => array(
+				'validate_callback' => function ($param, $request, $key) {
+					return is_numeric($param) && get_user_by('ID', $param);
+				},
+				'required' => true
+			)
+		)
+	) );
+	register_rest_route( $namespace.'/v'.$version, '/locations/', array(
+		'methods'  => 'GET',
+		'callback' => 'v2_get_locations'
+	) );
+	register_rest_route( $namespace.'/v'.$version, '/data/', array(
+		'methods'  => 'GET',
+		'callback' => 'v2_get_data'
+	) );
+	register_rest_route( $namespace.'/v'.$version, '/responses/(?P<id>.+)/', array(
+		'methods'  => 'GET',
+		'callback' => 'v2_get_responses',
+		'args' => array(
+			'id' => array(
+				'validate_callback' => function ($param, $request, $key) {
+					return is_numeric($param) && get_user_by('ID', $param);
+				},
+				'required' => true
+			)
+		)
+	) );
+	register_rest_route( $namespace.'/v'.$version, '/new/receiver/(?P<email>.+)/(?P<name>.+)/(?P<from>.+)', array(
+		'methods'  => 'GET',
+		'callback' => 'v2_setup_receiver',
+		'args' => array(
+			'email' => array(
+				'validate_callback' => function ($param, $request, $key) {
+					return filter_var($param, FILTER_VALIDATE_EMAIL);
+				},
+				'required' => true
+			),
+			'name' => array(
+				'required' => true
+			),
+			'from' => array(
+				'validate_callback' => function ($param, $request, $key) {
+					return is_numeric($param) && get_user_by('ID', $param);
+				},
+				'required' => true
+			)
+		)
+	) );
+	register_rest_route( $namespace.'/v'.$version, '/new/sender/(?P<username>.+)/(?P<pass>.+)/(?P<email>.+)/(?P<name>.+)', array(
+		'methods'  => 'GET',
+		'callback' => 'v2_setup_sender',
+		'args' => array(
+			'username' => array(
+				'validate_callback' => function ($param, $request, $key) {
+					return !username_exists($param);
+				},
+				'required' => true
+			),
+			'pass' => array(
+				'required' => true
+			),
+			'email' => array(
+				'validate_callback' => function ($param, $request, $key) {
+					return filter_var($param, FILTER_VALIDATE_EMAIL) && !email_exists($param);
+				},
+				'required' => true
+			),
+			'name' => array(
+				'required' => true
+			)
+		)
+	) );
+	register_rest_route( $namespace.'/v'.$version, '/new/object/', array(
+		'methods'  => 'POST',
+		'callback' => 'v2_setup_object',
+		'args' => array(
+			'owner' => array(
+				'validate_callback' => function ($param, $request, $key) {
+					return is_numeric($param) && get_user_by('ID', $param);
+				},
+				'required' => true
+			),
+			'object' => array(
+				'required' => true
+			),
+			'name' => array(
+				'required' => true
+			)
+		)
+	) );
+	register_rest_route( $namespace.'/v'.$version, '/new/gift/', array(
+		'methods'  => 'POST',
+		'callback' => 'v2_setup_gift',
+		'args' => array(
+			'sender' => array(
+				'validate_callback' => function ($param, $request, $key) {
+					return is_numeric($param) && get_user_by('ID', $param);
+				},
+				'required' => true
+			),
+			'gift' => array(
+				'required' => true
+			)
+		)
+	) );
+	register_rest_route( $namespace.'/v'.$version, '/unwrapped/gift/(?P<id>.+)/(?P<recipient>.+)/', array(
+		'methods'  => 'GET',
+		'callback' => 'v2_unwrap_gift',
+		'args' => array(
+			'id' => array(
+				'validate_callback' => function ($param, $request, $key) {
+					return is_numeric($param) && is_string( get_post_status( $param ) );
+				},
+				'required' => true
+			),
+			'recipient' => array(
+				'validate_callback' => function ($param, $request, $key) {
+					return is_numeric($param) && get_user_by('ID', $param);
+				},
+				'required' => true
+			)
+		)
+	) );
+	register_rest_route( $namespace.'/v'.$version, '/respond/gift/(?P<id>.+)/', array(
+		'methods'  => 'POST',
+		'callback' => 'v2_respond_to_gift',
+		'args' => array(
+			'id' => array(
+				'validate_callback' => function ($param, $request, $key) {
+					return is_numeric($param) && is_string( get_post_status( $param ) );
+				},
+				'required' => true
+			),
+			'response' => array(
+				'required' => true
+			),
+			'sender' => array(
+				'required' => true
+			),
+			'owner' => array(
+				'required' => true
+			)
+		)
+	) );
+	register_rest_route( $namespace.'/v'.$version, '/received/gift/(?P<id>.+)/(?P<recipient>.+)/', array(
+		'methods'  => 'GET',
+		'callback' => 'v2_received_gift',
+		'args' => array(
+			'id' => array(
+				'validate_callback' => function ($param, $request, $key) {
+					return is_numeric($param) && is_string( get_post_status( $param ) );
+				},
+				'required' => true
+			),
+			'recipient' => array(
+				'validate_callback' => function ($param, $request, $key) {
+					return is_numeric($param) && get_user_by('ID', $param);
+				},
+				'required' => true
+			)
+		)
+	) );
+	register_rest_route( $namespace.'/v'.$version, '/upload/object/', array(
+		'methods'  => 'POST',
+		'callback' => 'v2_upload'
+	) );
+}
+
+function v2_gift_auth ($request) {
+	$user = get_user_by('login', $request['user']);
+	unset($user->allcaps, $user->caps, $user->cap_key, $user->filter);
+
+	$result = array(
+		'user' => $user,
+		'token' => null,
+		'success' => true
+	);
+
+	$response = new WP_REST_Response( $result );
+	$response->set_status( 200 );
+	$response->header( 'Access-Control-Allow-Origin', '*' );
+	
+	return $response;
+}
+
+function v2_get_contacts ($request) {
 	$u = get_users( array(
 		'exclude'	=> array($request['id']),
 		'orderby'	=> 'nicename'
@@ -459,7 +713,7 @@ function get_contacts ($request) {
 	return $response;
 }
 
-function get_data ($request) {
+function v2_get_data ($request) {
 	$query = array(
 		'numberposts'   => -1,
 		'post_type'     => 'gift',
@@ -625,7 +879,7 @@ function get_data ($request) {
 	return $response;
 }
 
-function get_sent_gifts ($request) {
+function v2_get_sent_gifts ($request) {
 	$user = get_user_by('ID', $request['id']);
 
 	$result = array(
@@ -707,7 +961,7 @@ function get_sent_gifts ($request) {
 	return $response;
 }
 
-function get_received_gifts ($request) {
+function v2_get_received_gifts ($request) {
 	$user = get_user_by('ID', $request['id']);
 
 	$result = array(
@@ -793,7 +1047,7 @@ function get_received_gifts ($request) {
 	return $response;
 }
 
-function get_objects ($request) {
+function v2_get_objects ($request) {
 	$user = get_user_by('ID', $request['id']);
 
 	$result = array(
@@ -825,7 +1079,7 @@ function get_objects ($request) {
 	return $response;
 }
 
-function get_locations ($request) {
+function v2_get_locations ($request) {
 	$query = array(
 		'numberposts'   => -1,
 		'post_type'     => 'location',
@@ -844,7 +1098,7 @@ function get_locations ($request) {
 	return $response;
 }
 
-function get_responses ($request) {
+function v2_get_responses ($request) {
 	$query = array(
 		'numberposts'   => -1,
 		'post_type'     => 'response',
@@ -888,7 +1142,7 @@ function get_responses ($request) {
 	return $response;
 }
 
-function setup_sender ($request) {
+function v2_setup_sender ($request) {
 	$username = $request['username'];
 	$email = $request['email'];
 
@@ -920,7 +1174,7 @@ function setup_sender ($request) {
 	return $response;
 }
 
-function setup_receiver ($request) {
+function v2_setup_receiver ($request) {
 	$email = $request['email'];
 
 	$result = array(
@@ -964,7 +1218,7 @@ function setup_receiver ($request) {
 	return $response;
 }
 
-function unwrap_gift ($request) {
+function v2_unwrap_gift ($request) {
 	$id = $request['id'];
 
 	$result = array(
@@ -995,7 +1249,7 @@ function unwrap_gift ($request) {
 	return $response;
 }
 
-function respond_to_gift ($request) {
+function v2_respond_to_gift ($request) {
 	$giftId = $request['id'];
 
 	$result = array(
@@ -1036,7 +1290,7 @@ function respond_to_gift ($request) {
 	return $response;
 }
 
-function received_gift ($request) {
+function v2_received_gift ($request) {
 	$id = $request['id'];
 
 	$result = array(
@@ -1067,7 +1321,7 @@ function received_gift ($request) {
 	return $response;
 }
 
-function validate_receiver ($request) {
+function v2_validate_receiver ($request) {
 	$email = $request['email'];
 
 	$result = array(
@@ -1087,7 +1341,7 @@ function validate_receiver ($request) {
 	return $response;
 }
 
-function upload () {
+function v2_upload () {
 	$result = array(
 		'success' => true
 	);
@@ -1108,7 +1362,7 @@ function upload () {
 	return $response;
 }
 
-function setup_object ($request) {
+function v2_setup_object ($request) {
   	$object = json_decode(stripslashes($request['object']));
   
 	$result = array(
@@ -1189,7 +1443,7 @@ function setup_object ($request) {
 	return $response;
 }
 
-function setup_gift ($request) {
+function v2_setup_gift ($request) {
 	$result = array(
 		'success' => true
 	);
