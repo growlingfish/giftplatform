@@ -181,6 +181,15 @@ function get_gift_user ($id) {
 	);
 }
 
+function check_token ($id) {
+	$token = null;
+	$auth = explode(" ", $_SERVER["HTTP_AUTHORIZATION"]);
+	if (count($auth) == 2 && $auth[0] == 'GiftToken') {
+		$token = base64_decode($auth[1]);
+	} 
+	return $token;
+}
+
 $namespace = 'gift';
 
 define ( 'ACF_recipient', 	'field_58e4f6e88f3d7' );
@@ -465,7 +474,7 @@ function v3_get_sent_gifts ($request) {
 	$result = array(
 		'success' => true,
 		'gifts' => array(),
-		'debug' => $_SERVER["HTTP_AUTHORIZATION"]
+		'debug' => check_token($request['id'])
 	);
 
 	$query = array(
