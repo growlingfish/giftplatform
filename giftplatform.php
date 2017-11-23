@@ -464,7 +464,8 @@ function v3_gift_auth ($request) {
 function v3_get_sent_gifts ($request) {
 	$result = array(
 		'success' => true,
-		'gifts' => array()
+		'gifts' => array(),
+		'debug' => $_SERVER["HTTP_AUTHORIZATION"]
 	);
 
 	$query = array(
