@@ -191,7 +191,9 @@ function check_token ($id) {
 			$table = $wpdb->prefix . TOKENTABLE;
 			$validTokens = $wpdb->get_results( 
 				$wpdb->prepare( 
-					"SELECT id FROM $table WHERE userId=$credentials[0] AND token=$credentials[1] AND expiresAt > NOW()"
+					"SELECT id FROM $table WHERE userId=%d AND token=%s AND expiresAt > NOW()",
+					$credentials[0],
+					$credentials[1]
 				)
 			);
 			return count ($validTokens) > 0;
