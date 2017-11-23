@@ -169,7 +169,7 @@ function generate_token ($userId, $apiVersion) {
 	}	
 }
 
-function get_user ($id) {
+function get_gift_user ($id) {
 	$user = get_user_by('ID', $id);
 	$userdata = get_userdata($user->data->ID);
 
@@ -439,7 +439,7 @@ function v3_gift_auth ($request) {
 	$user = get_user_by('login', $request['user']);
 
 	$result = array(
-		'user' => get_user($user->data->ID),
+		'user' => get_gift_user($user->data->ID),
 		'token' => null,
 		'success' => false
 	);
