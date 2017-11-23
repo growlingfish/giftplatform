@@ -182,12 +182,22 @@ function get_gift_user ($id) {
 }
 
 function check_token ($id) {
-	$token = null;
-	$auth = explode(" ", $_SERVER["HTTP_AUTHORIZATION"]);
-	if (count($auth) == 2 && $auth[0] == 'GiftToken') {
-		$token = base64_decode($auth[1]);
+	$header = explode(" ", $_SERVER["HTTP_AUTHORIZATION"]);
+	if (count($header) == 2 && $header[0] == 'GiftToken') {
+		$auth = base64_decode($header[1]);
+		$credentials = explode(":", $auth);
+		if (count($credentials) == 2) {
+			global $wpdb;
+			$table = $wpdb->prefix . TOKENTABLE;
+			$validTokens = $wpdb->get_results( 
+				$wpdb->prepare( 
+					"SELECT id FROM $table WHERE userId=$credentials[0] AND token=$credentials[1] AND expiresAt > NOW()"
+				)
+			);
+			return count ($validTokens) > 0;
+		}
 	} 
-	return $token;
+	return false;
 }
 
 $namespace = 'gift';
