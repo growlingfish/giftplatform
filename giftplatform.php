@@ -3,7 +3,7 @@
  * Plugin Name:       GIFT platform plugin
  * Plugin URI:        https://github.com/growlingfish/giftplatform
  * Description:       WordPress admin and server for GIFT project digital gifting platform
- * Version:           0.1.0.2
+ * Version:           0.1.0.3
  * Author:            Ben Bedwell
  * License:           GNU General Public License v3
  * License URI:       http://www.gnu.org/licenses/gpl-3.0.html
@@ -171,6 +171,21 @@ function generate_token ($userId, $apiVersion) {
 
 $namespace = 'gift';
 
+define ( 'ACF_recipient', 	'field_58e4f6e88f3d7' );
+define ( 'ACF_wrap', 		'field_58e4f5da816ac' );
+define ( 'ACF_date', 		'field_58e4fb5c55127' );
+define ( 'ACF_key',			'field_58e4fb8055128' );
+define ( 'ACF_place', 		'field_58e4fae755126' );
+define ( 'ACF_artcode',		'field_58ff4bdf23d95' );
+define ( 'ACF_personal', 	'field_594d2552e8835' );
+define ( 'ACF_object', 		'field_595b4a2bc9c1c' );
+define ( 'ACF_payload',		'field_58e4f689655ef' );
+define ( 'ACF_giftcard', 	'field_5964a5787eb68' );
+define ( 'ACF_received', 	'field_595e186f21668' );
+define ( 'ACF_unwrapped', 	'field_595e0593bd980' );
+define ( 'ACF_responded', 	'field_595e05c8bd981' );
+define ( 'ACF_responded', 	'field_595e05c8bd981' );
+
 /*
 *	Custom API end-points: year 1 review
 */
@@ -210,10 +225,10 @@ function gift_v3_register_api_hooks () {
 				'required' => true
 			)
 		)
-	) );
+	) );*/
 	register_rest_route( $namespace.'/v'.$version, '/gifts/sent/(?P<id>.+)/', array(
 		'methods'  => 'GET',
-		'callback' => 'get_sent_gifts',
+		'callback' => 'v3_get_sent_gifts',
 		'args' => array(
 			'id' => array(
 				'validate_callback' => function ($param, $request, $key) {
@@ -223,7 +238,7 @@ function gift_v3_register_api_hooks () {
 			)
 		)
 	) );
-	register_rest_route( $namespace.'/v'.$version, '/contacts/(?P<id>.+)/', array(
+	/*register_rest_route( $namespace.'/v'.$version, '/contacts/(?P<id>.+)/', array(
 		'methods'  => 'GET',
 		'callback' => 'get_contacts',
 		'args' => array(
@@ -422,6 +437,79 @@ function v3_gift_auth ($request) {
 	if ($token != null) {
 		$result['token'] = $token;
 		$result['success'] = true;
+	}
+	
+	$response = new WP_REST_Response( $result );
+	if ($result['success']) {
+		$response->set_status( 200 );
+	} else {
+		$response->set_status( 503 );
+	}
+	$response->header( 'Access-Control-Allow-Origin', '*' );
+	
+	return $response;
+}
+
+function v3_get_sent_gifts ($request) {
+	$user = get_user_by('ID', $request['id']);
+
+	$result = array(
+		'success' => true,
+		'gifts' => array()
+	);
+
+	$query = array(
+		'numberposts'   => -1,
+		'post_type'     => 'gift',
+		'post_status'   => array('draft', 'publish'),
+		'author'	   	=> $user->ID
+	);
+	$all_gifts = get_posts( $query );
+	foreach ($all_gifts as $gift) {
+		$hasObject = false;
+		$recipients = get_field( ACF_recipient, $gift->ID );
+		foreach ($recipients as $recipient) {
+			$gift->recipient = $recipient;
+			$gift->wraps = get_field( ACF_wrap, $gift->ID);
+			foreach ($gift->wraps as &$wrap) {
+				$wrap->unwrap_date = get_field( ACF_date, $wrap->ID);
+				$wrap->unwrap_key = get_field( ACF_key, $wrap->ID);
+				$wrap->unwrap_place = html_entity_decode(get_field( ACF_place, $wrap->ID));
+				$wrap->unwrap_artcode = get_field( ACF_artcode, $wrap->ID);
+				$wrap->unwrap_personal = get_field( ACF_personal, $wrap->ID);
+				$wrap->unwrap_object = get_field( ACF_object, $wrap->ID);
+				if (is_array($wrap->unwrap_object) && count($wrap->unwrap_object) > 0) {
+					$wrap->unwrap_object = $wrap->unwrap_object[0];
+				} else if (is_a($wrap->unwrap_object, 'WP_Post')) {
+						
+				} else {
+					unset($wrap->unwrap_object);
+				}  
+				if ($wrap->unwrap_object) {
+					$hasObject = true;
+					$wrap->unwrap_object->post_image = get_the_post_thumbnail_url($wrap->unwrap_object->ID, 'large');
+					$wrap->unwrap_object->post_content = wpautop($wrap->unwrap_object->post_content);
+				}
+			}
+
+			if ($hasObject) {
+				$gift->payloads = get_field( ACF_payload, $gift->ID);
+				foreach ($gift->payloads as &$payload) {
+					$payload->post_content = wpautop($payload->post_content);
+				}
+				$gift->giftcards = get_field( ACF_giftcard, $gift->ID);
+				foreach ($gift->giftcards as &$giftcard) {
+					$giftcard->post_content = wpautop($giftcard->post_content);
+				}
+				$gift->status = array(
+					'received' => get_field( ACF_received, $gift->ID),
+					'unwrapped' => get_field( ACF_unwrapped, $gift->ID),
+					'responded' => get_field( ACF_responded, $gift->ID)
+				);
+				$result['gifts'][] = $gift;
+			}
+			break;
+		}
 	}
 
 	$response = new WP_REST_Response( $result );
