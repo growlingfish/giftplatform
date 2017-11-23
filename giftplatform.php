@@ -3,7 +3,7 @@
  * Plugin Name:       GIFT platform plugin
  * Plugin URI:        https://github.com/growlingfish/giftplatform
  * Description:       WordPress admin and server for GIFT project digital gifting platform
- * Version:           0.1.0.3
+ * Version:           0.1.0.4
  * Author:            Ben Bedwell
  * License:           GNU General Public License v3
  * License URI:       http://www.gnu.org/licenses/gpl-3.0.html
@@ -167,6 +167,18 @@ function generate_token ($userId, $apiVersion) {
 	} else {
 		return null;
 	}	
+}
+
+function get_user ($id) {
+	$user = get_user_by('ID', $id);
+	$userdata = get_userdata($user->data->ID);
+
+	return array(
+		'ID' 			=> $user->data->ID,
+		'user_email'	=> $user->data->user_email,
+		'nickname'		=> $userdata->nickname,
+		'gravatar'		=> get_avatar_url( $user->data->ID, 32 )
+	);
 }
 
 $namespace = 'gift';
@@ -425,10 +437,9 @@ function gift_v3_register_api_hooks () {
 
 function v3_gift_auth ($request) {
 	$user = get_user_by('login', $request['user']);
-	unset($user->allcaps, $user->caps, $user->cap_key, $user->filter);
 
 	$result = array(
-		'user' => $user,
+		'user' => get_user($user->data->ID),
 		'token' => null,
 		'success' => false
 	);
@@ -451,8 +462,6 @@ function v3_gift_auth ($request) {
 }
 
 function v3_get_sent_gifts ($request) {
-	$user = get_user_by('ID', $request['id']);
-
 	$result = array(
 		'success' => true,
 		'gifts' => array()
@@ -462,7 +471,7 @@ function v3_get_sent_gifts ($request) {
 		'numberposts'   => -1,
 		'post_type'     => 'gift',
 		'post_status'   => array('draft', 'publish'),
-		'author'	   	=> $user->ID
+		'author'	   	=> $request['id']
 	);
 	$all_gifts = get_posts( $query );
 	foreach ($all_gifts as $gift) {
