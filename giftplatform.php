@@ -498,7 +498,7 @@ function v3_get_sent_gifts ($request) {
 		);
 		$all_gifts = get_posts( $query );
 		foreach ($all_gifts as $giftobject) {
-			$gift = array(
+			$gift = (object)array(
 				'ID' => $giftobject->ID
 			);
 
