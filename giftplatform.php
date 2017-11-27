@@ -217,7 +217,7 @@ define ( 'ACF_giftcard', 	'field_5964a5787eb68' );
 define ( 'ACF_received', 	'field_595e186f21668' );
 define ( 'ACF_unwrapped', 	'field_595e0593bd980' );
 define ( 'ACF_responded', 	'field_595e05c8bd981' );
-define ( 'ACF_responded', 	'field_595e05c8bd981' );
+define ( 'ACF_location', 	'field_59a85fff4be5a' );
 
 /*
 *	Custom API end-points: year 1 review
@@ -540,7 +540,7 @@ function v3_get_sent_gifts ($request) {
 
 			$recipients = get_field( ACF_recipient, $gift->ID );
 			foreach ($recipients as $recipient) {
-				$gift->recipient = get_gift_user($recipient->data->ID);
+				$gift->recipient = get_gift_user($recipient['ID']);
 				break; // only one recipient for now
 			}
 				
@@ -554,18 +554,28 @@ function v3_get_sent_gifts ($request) {
 				$w->unwrap_place = html_entity_decode(get_field( ACF_place, $wrap->ID));
 				$w->unwrap_artcode = get_field( ACF_artcode, $wrap->ID);
 				$w->unwrap_personal = get_field( ACF_personal, $wrap->ID);
-				$w->unwrap_object = get_field( ACF_object, $wrap->ID);
-				if (is_array($w->unwrap_object) && count($w->unwrap_object) > 0) {
-					$w->unwrap_object = $w->unwrap_object[0];
-				} else if (is_a($w->unwrap_object, 'WP_Post')) {
+				$object = get_field( ACF_object, $wrap->ID);
+				if (is_array($object) && count($object) > 0) {
+					$object = $object[0];
+				} else if (is_a($object, 'WP_Post')) {
 						
 				} else {
-					unset($w->unwrap_object);
+					unset($object);
 				}  
-				if ($w->unwrap_object) {
+				if ($object) {
 					$hasObject = true;
-					$w->unwrap_object->post_image = get_the_post_thumbnail_url($w->unwrap_object->ID, 'large');
-					$w->unwrap_object->post_content = wpautop($w->unwrap_object->post_content);
+					$location = get_field( ACF_location, $object->ID );
+					$w->unwrap_object = (object)array(
+						'ID' => $object->ID,
+						'post_author' => $object->post_author,
+						'post_title' => $object->post_title,
+						'post_image' => get_the_post_thumbnail_url($object->ID, 'large'),
+						'post_content' => wpautop($object->post_content),
+						'location' => (object)array(
+							'ID' => $location[0]->ID,
+							'post_title' => $location[0]->post_title
+						)
+					);
 				}
 				$gift->wraps[] = $w;
 			}
