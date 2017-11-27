@@ -335,10 +335,10 @@ function gift_v3_register_api_hooks () {
 				'required' => true
 			)
 		)
-	) );
-	register_rest_route( $namespace.'/v'.$version, '/new/sender/(?P<username>.+)/(?P<pass>.+)/(?P<email>.+)/(?P<name>.+)', array(
+	) );*/
+	register_rest_route( $namespace.'/v'.$version, '/new/sender/(?P<username>.+)/(?P<pass>.+)/(?P<email>.+)/(?P<name>.+)/(?P<id>.+)/', array(
 		'methods'  => 'GET',
-		'callback' => 'setup_sender',
+		'callback' => 'v3_setup_sender',
 		'args' => array(
 			'username' => array(
 				'validate_callback' => function ($param, $request, $key) {
@@ -357,10 +357,16 @@ function gift_v3_register_api_hooks () {
 			),
 			'name' => array(
 				'required' => true
+			),
+			'id' => array(
+				'validate_callback' => function ($param, $request, $key) {
+					return is_numeric($param) && get_user_by('ID', $param);
+				},
+				'required' => true
 			)
 		)
 	) );
-	register_rest_route( $namespace.'/v'.$version, '/new/object/', array(
+	/*register_rest_route( $namespace.'/v'.$version, '/new/object/', array(
 		'methods'  => 'POST',
 		'callback' => 'setup_object',
 		'args' => array(
@@ -479,6 +485,42 @@ function v3_gift_auth ($request) {
 	}
 	$response->header( 'Access-Control-Allow-Origin', '*' );
 	
+	return $response;
+}
+
+function v3_setup_sender ($request) {
+	$result = array(
+		'success' => false,
+		'user' => array()
+	);
+
+	if (check_token($request['id'])) {
+		$username = $request['username'];
+		$email = $request['email'];
+		if (email_exists($email)) {
+			$result['existing'] = $email;
+		} else if (username_exists($username)) {
+			$result['existing'] = $username;
+		} else {
+			$result['success'] = true;
+
+			$id = wp_create_user( $username, $request['pass'], $email );
+			update_user_meta($id, 'user_nicename', $request['name']);
+			update_user_meta($id, 'first_name', $request['name']);
+			update_user_meta($id, 'display_name', $request['name']);
+			update_user_meta($id, 'nickname', $request['name']);
+
+			$result['user'] = get_gift_user($id);
+		}
+	}
+
+	$response = new WP_REST_Response( $result );
+	if ($result['success']) {
+		$response->set_status( 200 );
+	} else {
+		$response->set_status( 503 );
+	}
+	$response->header( 'Access-Control-Allow-Origin', '*' );
 	return $response;
 }
 
