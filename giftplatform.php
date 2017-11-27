@@ -634,7 +634,7 @@ function v3_get_responses ($request) {
 			'post_type'     => 'response',
 			'post_status'   => 'publish'
 		);
-		$response['success'] = true;
+		$result['success'] = true;
 		$responses = get_posts($query);
 		foreach ($responses as $response) {
 			$r = (object)array(
