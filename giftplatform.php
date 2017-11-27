@@ -540,41 +540,51 @@ function v3_get_sent_gifts ($request) {
 
 			$recipients = get_field( ACF_recipient, $gift->ID );
 			foreach ($recipients as $recipient) {
-				$gift->recipient = get_gift_user($recipient->ID);
+				$gift->recipient = get_gift_user($recipient->data->ID);
 				break; // only one recipient for now
 			}
 				
 			$wraps = get_field( ACF_wrap, $gift->ID);
-			foreach ($wraps as &$wrap) {
-				$wrap->unwrap_date = get_field( ACF_date, $wrap->ID);
-				$wrap->unwrap_key = get_field( ACF_key, $wrap->ID);
-				$wrap->unwrap_place = html_entity_decode(get_field( ACF_place, $wrap->ID));
-				$wrap->unwrap_artcode = get_field( ACF_artcode, $wrap->ID);
-				$wrap->unwrap_personal = get_field( ACF_personal, $wrap->ID);
-				$wrap->unwrap_object = get_field( ACF_object, $wrap->ID);
-				if (is_array($wrap->unwrap_object) && count($wrap->unwrap_object) > 0) {
-					$wrap->unwrap_object = $wrap->unwrap_object[0];
-				} else if (is_a($wrap->unwrap_object, 'WP_Post')) {
+			foreach ($wraps as $wrap) {
+				$w = (object)array(
+					'ID' => $wrap->ID
+				);
+				$w->unwrap_date = get_field( ACF_date, $wrap->ID);
+				$w->unwrap_key = get_field( ACF_key, $wrap->ID);
+				$w->unwrap_place = html_entity_decode(get_field( ACF_place, $wrap->ID));
+				$w->unwrap_artcode = get_field( ACF_artcode, $wrap->ID);
+				$w->unwrap_personal = get_field( ACF_personal, $wrap->ID);
+				$w->unwrap_object = get_field( ACF_object, $wrap->ID);
+				if (is_array($w->unwrap_object) && count($w->unwrap_object) > 0) {
+					$w->unwrap_object = $w->unwrap_object[0];
+				} else if (is_a($w->unwrap_object, 'WP_Post')) {
 						
 				} else {
-					unset($wrap->unwrap_object);
+					unset($w->unwrap_object);
 				}  
-				if ($wrap->unwrap_object) {
+				if ($w->unwrap_object) {
 					$hasObject = true;
-					$wrap->unwrap_object->post_image = get_the_post_thumbnail_url($wrap->unwrap_object->ID, 'large');
-					$wrap->unwrap_object->post_content = wpautop($wrap->unwrap_object->post_content);
+					$w->unwrap_object->post_image = get_the_post_thumbnail_url($w->unwrap_object->ID, 'large');
+					$w->unwrap_object->post_content = wpautop($w->unwrap_object->post_content);
 				}
+				$gift->wraps[] = $w;
 			}
-			$gift->wraps = $wraps;
 
 			if ($hasObject) {
-				$gift->payloads = get_field( ACF_payload, $gift->ID);
-				foreach ($gift->payloads as &$payload) {
-					$payload->post_content = wpautop($payload->post_content);
+				$payloads = get_field( ACF_payload, $gift->ID);
+				foreach ($payloads as $payload) {
+					$gift->payloads[] = (object)array(
+						'ID' => $payload->ID,
+						'post_content' => wpautop($payload->post_content)
+					);
 				}
-				$gift->giftcards = get_field( ACF_giftcard, $gift->ID);
-				foreach ($gift->giftcards as &$giftcard) {
-					$giftcard->post_content = wpautop($giftcard->post_content);
+				$giftcards = get_field( ACF_giftcard, $gift->ID);
+				foreach ($giftcards as $giftcard) {
+					$gift->giftcards[] = (object)array(
+						'ID' => $giftcard->ID,
+						'post_title' => $giftcard->post_title,
+						'post_content' => wpautop($giftcard->post_content)
+					);
 				}
 				$gift->status = array(
 					'received' => get_field( ACF_received, $gift->ID),
