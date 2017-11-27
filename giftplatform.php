@@ -218,6 +218,7 @@ define ( 'ACF_received', 	'field_595e186f21668' );
 define ( 'ACF_unwrapped', 	'field_595e0593bd980' );
 define ( 'ACF_responded', 	'field_595e05c8bd981' );
 define ( 'ACF_location', 	'field_59a85fff4be5a' );
+define ( 'ACF_gift', 		'field_59c4cdc1f07f6' );
 
 /*
 *	Custom API end-points: year 1 review
@@ -302,10 +303,10 @@ function gift_v3_register_api_hooks () {
 	register_rest_route( $namespace.'/v'.$version, '/data/', array(
 		'methods'  => 'GET',
 		'callback' => 'get_data'
-	) );
+	) );*/
 	register_rest_route( $namespace.'/v'.$version, '/responses/(?P<id>.+)/', array(
 		'methods'  => 'GET',
-		'callback' => 'get_responses',
+		'callback' => 'v3_get_responses',
 		'args' => array(
 			'id' => array(
 				'validate_callback' => function ($param, $request, $key) {
@@ -315,7 +316,7 @@ function gift_v3_register_api_hooks () {
 			)
 		)
 	) );
-	register_rest_route( $namespace.'/v'.$version, '/new/receiver/(?P<email>.+)/(?P<name>.+)/(?P<from>.+)', array(
+	/*register_rest_route( $namespace.'/v'.$version, '/new/receiver/(?P<email>.+)/(?P<name>.+)/(?P<from>.+)', array(
 		'methods'  => 'GET',
 		'callback' => 'setup_receiver',
 		'args' => array(
@@ -603,6 +604,56 @@ function v3_get_sent_gifts ($request) {
 					'responded' => get_field( ACF_responded, $gift->ID)
 				);
 				$result['gifts'][] = $gift;
+			}
+		}
+	}
+
+	$response = new WP_REST_Response( $result );
+	if ($result['success']) {
+		$response->set_status( 200 );
+	} else {
+		$response->set_status( 503 );
+	}
+	$response->header( 'Access-Control-Allow-Origin', '*' );
+	
+	return $response;
+}
+
+function v3_get_responses ($request) {
+	$result = array(
+		'success' => false,
+		'responses' => array(
+			'sent' => array(),
+			'received' => array()
+		)
+	);
+
+	if (check_token($request['id'])) {
+		$query = array(
+			'numberposts'   => -1,
+			'post_type'     => 'response',
+			'post_status'   => 'publish'
+		);
+		$response['success'] = true;
+		$responses = get_posts($query);
+		foreach ($responses as $response) {
+			$r = (object)array(
+				'ID' => $response->ID,
+				'post_date' => $response->post_date,
+				'post_author' => get_gift_user($response->post_author),
+				'post_content' => $response->post_content
+			);
+			if ($response->post_author == $request['id']) { // sent
+				$r->gift = get_field( ACF_gift, $r->ID );
+				
+				$result['responses']['sent'][] = $response;
+			} else { // received
+				$gift = get_field( ACF_gift, $r->ID );
+				if ($gift->post_author == $request['id']) {
+					$r->gift = $gift;
+					
+					$result['responses']['received'][] = $response;
+				}
 			}
 		}
 	}
