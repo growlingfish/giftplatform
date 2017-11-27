@@ -533,7 +533,8 @@ function v3_get_sent_gifts ($request) {
 		$all_gifts = get_posts( $query );
 		foreach ($all_gifts as $giftobject) {
 			$gift = (object)array(
-				'ID' => $giftobject->ID
+				'ID' => $giftobject->ID,
+				'post_date' => $giftobject->post_date
 			);
 
 			$hasObject = false;
