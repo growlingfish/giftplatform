@@ -3,7 +3,7 @@
  * Plugin Name:       GIFT platform plugin
  * Plugin URI:        https://github.com/growlingfish/giftplatform
  * Description:       WordPress admin and server for GIFT project digital gifting platform
- * Version:           0.1.0.5
+ * Version:           0.1.0.6
  * Author:            Ben Bedwell
  * License:           GNU General Public License v3
  * License URI:       http://www.gnu.org/licenses/gpl-3.0.html
@@ -393,10 +393,10 @@ function gift_v3_register_api_hooks () {
 				'required' => true
 			)
 		)
-	) );
+	) );*/
 	register_rest_route( $namespace.'/v'.$version, '/unwrapped/gift/(?P<id>.+)/(?P<recipient>.+)/', array(
 		'methods'  => 'GET',
-		'callback' => 'unwrap_gift',
+		'callback' => 'v3_unwrap_gift',
 		'args' => array(
 			'id' => array(
 				'validate_callback' => function ($param, $request, $key) {
@@ -411,7 +411,7 @@ function gift_v3_register_api_hooks () {
 				'required' => true
 			)
 		)
-	) );
+	) );/*
 	register_rest_route( $namespace.'/v'.$version, '/respond/gift/(?P<id>.+)/', array(
 		'methods'  => 'POST',
 		'callback' => 'respond_to_gift',
@@ -432,10 +432,10 @@ function gift_v3_register_api_hooks () {
 				'required' => true
 			)
 		)
-	) );
+	) );*/
 	register_rest_route( $namespace.'/v'.$version, '/received/gift/(?P<id>.+)/(?P<recipient>.+)/', array(
 		'methods'  => 'GET',
-		'callback' => 'received_gift',
+		'callback' => 'v3_received_gift',
 		'args' => array(
 			'id' => array(
 				'validate_callback' => function ($param, $request, $key) {
@@ -450,7 +450,7 @@ function gift_v3_register_api_hooks () {
 				'required' => true
 			)
 		)
-	) );
+	) );/*
 	register_rest_route( $namespace.'/v'.$version, '/upload/object/', array(
 		'methods'  => 'POST',
 		'callback' => 'upload'
@@ -666,6 +666,84 @@ function v3_get_responses ($request) {
 	}
 	$response->header( 'Access-Control-Allow-Origin', '*' );
 	
+	return $response;
+}
+
+function v3_unwrap_gift ($request) {
+	$id = $request['id'];
+
+	$result = array(
+		'success' => false
+	);
+
+	if (check_token($request['id'])) {
+		update_field(ACF_unwrapped, 1, $id);
+
+		$gift = get_post($id);
+		$sender_userdata = get_userdata($gift->post_author);
+		$recipient_userdata = get_userdata($request['recipient']);
+
+		$result = array(
+			'success' => true
+		);
+
+		/*require_once('lib/rest.php');
+		curl_post('https://chat.gifting.digital/api/', array(
+			'type' => '103', //types->unwrappedGift
+			'id' => $id,
+			'sender' => $gift->post_author,
+			'sender_nickname' => $sender_userdata->nickname,
+			'recipient' => $request['recipient'],
+			'recipient_nickname' => $recipient_userdata->nickname,
+			'title' => $gift->post_title,
+			'status' => 'unwrapped'
+		));*/
+	}
+
+	$response = new WP_REST_Response( $result );
+	if ($result['success']) {
+		$response->set_status( 200 );
+	} else {
+		$response->set_status( 503 );
+	}
+	$response->header( 'Access-Control-Allow-Origin', '*' );
+	return $response;
+}
+
+function v3_received_gift ($request) {
+	$id = $request['id'];
+
+	if (check_token($request['id'])) {
+		update_field(ACF_received, 1, $id);
+
+		$gift = get_post($id);
+		$sender_userdata = get_userdata($gift->post_author);
+		$recipient_userdata = get_userdata($request['recipient']);
+
+		$result = array(
+			'success' => true
+		);
+
+		/*require_once('lib/rest.php');
+		curl_post('https://chat.gifting.digital/api/', array(
+			'type' => '102', //types->receivedGift
+			'id' => $id,
+			'sender' => $gift->post_author,
+			'sender_nickname' => $sender_userdata->nickname,
+			'recipient' => $request['recipient'],
+			'recipient_nickname' => $recipient_userdata->nickname,
+			'title' => $gift->post_title,
+			'status' => 'received'
+		));*/
+	}
+
+	$response = new WP_REST_Response( $result );
+	if ($result['success']) {
+		$response->set_status( 200 );
+	} else {
+		$response->set_status( 503 );
+	}
+	$response->header( 'Access-Control-Allow-Origin', '*' );
 	return $response;
 }
 
