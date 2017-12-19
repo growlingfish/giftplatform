@@ -3,7 +3,7 @@
  * Plugin Name:       GIFT platform plugin
  * Plugin URI:        https://github.com/growlingfish/giftplatform
  * Description:       WordPress admin and server for GIFT project digital gifting platform
- * Version:           0.1.0.6
+ * Version:           0.1.0.7
  * Author:            Ben Bedwell
  * License:           GNU General Public License v3
  * License URI:       http://www.gnu.org/licenses/gpl-3.0.html
@@ -200,6 +200,83 @@ function check_token ($id) {
 		}
 	} 
 	return false;
+}
+
+function get_gift ($post) {
+	$gift = (object)array(
+		'ID' => $post->ID,
+		'post_date' => $post->post_date,
+		'post_author' => $post->post_author
+	);
+
+	$hasObject = false;
+
+	$recipients = get_field( ACF_recipient, $gift->ID );
+	foreach ($recipients as $recipient) {
+		$gift->recipient = get_gift_user($recipient['ID']);
+		break; // only one recipient for now
+	}
+		
+	$wraps = get_field( ACF_wrap, $gift->ID);
+	foreach ($wraps as $wrap) {
+		$w = (object)array(
+			'ID' => $wrap->ID
+		);
+		$w->unwrap_date = get_field( ACF_date, $wrap->ID);
+		$w->unwrap_key = get_field( ACF_key, $wrap->ID);
+		$w->unwrap_place = html_entity_decode(get_field( ACF_place, $wrap->ID));
+		$w->unwrap_artcode = get_field( ACF_artcode, $wrap->ID);
+		$w->unwrap_personal = get_field( ACF_personal, $wrap->ID);
+		$object = get_field( ACF_object, $wrap->ID);
+		if (is_array($object) && count($object) > 0) {
+			$object = $object[0];
+		} else if (is_a($object, 'WP_Post')) {
+				
+		} else {
+			unset($object);
+		}  
+		if ($object) {
+			$hasObject = true;
+			$location = get_field( ACF_location, $object->ID );
+			$w->unwrap_object = (object)array(
+				'ID' => $object->ID,
+				'post_author' => $object->post_author,
+				'post_title' => $object->post_title,
+				'post_image' => get_the_post_thumbnail_url($object->ID, 'large'),
+				'post_content' => wpautop($object->post_content),
+				'location' => (object)array(
+					'ID' => $location[0]->ID,
+					'post_title' => $location[0]->post_title
+				)
+			);
+		}
+		$gift->wraps[] = $w;
+	}
+
+	if ($hasObject) { // gift must have an object?
+		$payloads = get_field( ACF_payload, $gift->ID);
+		foreach ($payloads as $payload) {
+			$gift->payloads[] = (object)array(
+				'ID' => $payload->ID,
+				'post_content' => wpautop($payload->post_content)
+			);
+		}
+		$giftcards = get_field( ACF_giftcard, $gift->ID);
+		foreach ($giftcards as $giftcard) {
+			$gift->giftcards[] = (object)array(
+				'ID' => $giftcard->ID,
+				'post_title' => $giftcard->post_title,
+				'post_content' => wpautop($giftcard->post_content)
+			);
+		}
+		$gift->status = array(
+			'received' => get_field( ACF_received, $gift->ID),
+			'unwrapped' => get_field( ACF_unwrapped, $gift->ID),
+			'responded' => get_field( ACF_responded, $gift->ID)
+		);
+		return $gift;
+	}
+	return null;
 }
 
 $namespace = 'gift';
@@ -533,78 +610,7 @@ function v3_get_sent_gifts ($request) {
 		);
 		$all_gifts = get_posts( $query );
 		foreach ($all_gifts as $giftobject) {
-			$gift = (object)array(
-				'ID' => $giftobject->ID,
-				'post_date' => $giftobject->post_date
-			);
-
-			$hasObject = false;
-
-			$recipients = get_field( ACF_recipient, $gift->ID );
-			foreach ($recipients as $recipient) {
-				$gift->recipient = get_gift_user($recipient['ID']);
-				break; // only one recipient for now
-			}
-				
-			$wraps = get_field( ACF_wrap, $gift->ID);
-			foreach ($wraps as $wrap) {
-				$w = (object)array(
-					'ID' => $wrap->ID
-				);
-				$w->unwrap_date = get_field( ACF_date, $wrap->ID);
-				$w->unwrap_key = get_field( ACF_key, $wrap->ID);
-				$w->unwrap_place = html_entity_decode(get_field( ACF_place, $wrap->ID));
-				$w->unwrap_artcode = get_field( ACF_artcode, $wrap->ID);
-				$w->unwrap_personal = get_field( ACF_personal, $wrap->ID);
-				$object = get_field( ACF_object, $wrap->ID);
-				if (is_array($object) && count($object) > 0) {
-					$object = $object[0];
-				} else if (is_a($object, 'WP_Post')) {
-						
-				} else {
-					unset($object);
-				}  
-				if ($object) {
-					$hasObject = true;
-					$location = get_field( ACF_location, $object->ID );
-					$w->unwrap_object = (object)array(
-						'ID' => $object->ID,
-						'post_author' => $object->post_author,
-						'post_title' => $object->post_title,
-						'post_image' => get_the_post_thumbnail_url($object->ID, 'large'),
-						'post_content' => wpautop($object->post_content),
-						'location' => (object)array(
-							'ID' => $location[0]->ID,
-							'post_title' => $location[0]->post_title
-						)
-					);
-				}
-				$gift->wraps[] = $w;
-			}
-
-			if ($hasObject) {
-				$payloads = get_field( ACF_payload, $gift->ID);
-				foreach ($payloads as $payload) {
-					$gift->payloads[] = (object)array(
-						'ID' => $payload->ID,
-						'post_content' => wpautop($payload->post_content)
-					);
-				}
-				$giftcards = get_field( ACF_giftcard, $gift->ID);
-				foreach ($giftcards as $giftcard) {
-					$gift->giftcards[] = (object)array(
-						'ID' => $giftcard->ID,
-						'post_title' => $giftcard->post_title,
-						'post_content' => wpautop($giftcard->post_content)
-					);
-				}
-				$gift->status = array(
-					'received' => get_field( ACF_received, $gift->ID),
-					'unwrapped' => get_field( ACF_unwrapped, $gift->ID),
-					'responded' => get_field( ACF_responded, $gift->ID)
-				);
-				$result['gifts'][] = $gift;
-			}
+			$result['gifts'][] = get_gift($giftobject);
 		}
 	}
 
@@ -634,53 +640,11 @@ function v3_get_received_gifts ($request) {
 			'post_status'   => 'publish'
 		);
 		$all_gifts = get_posts( $query );
-		foreach ($all_gifts as $gift) {
-			$hasObject = false;
-			$recipients = get_field( ACF_recipient, $gift->ID );
+		foreach ($all_gifts as $giftobject) {
+			$recipients = get_field( ACF_recipient, $giftobject->ID );
 			foreach ($recipients as $recipient) {
 				if ($recipient['ID'] == $user->ID) {
-					$gift->post_author_data = get_user_by('ID', $gift->post_author)->data;
-					$userdata = get_userdata($gift->post_author);
-					$gift->post_author_data->nickname = $userdata->nickname;
-					$gift->wraps = get_field(ACF_wrap, $gift->ID);
-					foreach ($gift->wraps as &$wrap) {
-						$wrap->unwrap_date = get_field(ACF_date, $wrap->ID);
-						$wrap->unwrap_key = get_field(ACF_key, $wrap->ID);
-						$wrap->unwrap_place = html_entity_decode(get_field(ACF_place, $wrap->ID));
-						$wrap->unwrap_artcode = get_field(ACF_artcode, $wrap->ID);
-						$wrap->unwrap_personal = get_field(ACF_personal, $wrap->ID);
-						$wrap->unwrap_object = get_field(ACF_object, $wrap->ID);
-						if (is_array($wrap->unwrap_object) && count($wrap->unwrap_object) > 0) {
-							$wrap->unwrap_object = $wrap->unwrap_object[0];
-						} else if (is_a($wrap->unwrap_object, 'WP_Post')) {
-								
-						} else {
-							unset($wrap->unwrap_object);
-						}  
-						if ($wrap->unwrap_object) {
-							$hasObject = true;
-							$wrap->unwrap_object->post_image = get_the_post_thumbnail_url($wrap->unwrap_object->ID, 'large');
-							$wrap->unwrap_object->post_content = wpautop($wrap->unwrap_object->post_content);
-							$wrap->unwrap_object->location = get_field(ACF_location, $wrap->unwrap_object->ID);
-						}
-					}
-
-					if ($hasObject) {
-						$gift->payloads = get_field(ACF_payload, $gift->ID);
-						foreach ($gift->payloads as &$payload) {
-							$payload->post_content = wpautop($payload->post_content);
-						}
-						$gift->giftcards = get_field(ACF_giftcard, $gift->ID);
-						foreach ($gift->giftcards as &$giftcard) {
-							$giftcard->post_content = wpautop($giftcard->post_content);
-						}
-						$gift->status = array(
-							'received' => get_field(ACF_received, $gift->ID),
-							'unwrapped' => get_field(ACF_unwrapped, $gift->ID),
-							'responded' => get_field(ACF_responded, $gift->ID)
-						);
-						$result['gifts'][] = $gift;
-					}
+					$result['gifts'][] = get_gift($giftobject);
 					break;
 				}
 			}
