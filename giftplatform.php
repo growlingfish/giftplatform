@@ -481,10 +481,10 @@ function gift_v3_register_api_hooks () {
 				'required' => true
 			)
 		)
-	) );
+	) );*/
 	register_rest_route( $namespace.'/v'.$version, '/new/gift/', array(
 		'methods'  => 'POST',
-		'callback' => 'setup_gift',
+		'callback' => 'v3_setup_gift',
 		'args' => array(
 			'sender' => array(
 				'validate_callback' => function ($param, $request, $key) {
@@ -496,7 +496,7 @@ function gift_v3_register_api_hooks () {
 				'required' => true
 			)
 		)
-	) );*/
+	) );
 	register_rest_route( $namespace.'/v'.$version, '/unwrapped/gift/(?P<id>.+)/(?P<recipient>.+)/', array(
 		'methods'  => 'GET',
 		'callback' => 'v3_unwrap_gift',
@@ -802,15 +802,16 @@ function v3_get_responses ($request) {
 				'post_content' => $response->post_content
 			);
 			if ($response->post_author == $request['id']) { // sent
-				$r->gift = get_field( ACF_gift, $r->ID );
-				
-				$result['responses']['sent'][] = $response;
+				$gift = get_field( ACF_gift, $r->ID );
+				if ($gift) {
+					$r->gift = prepare_gift($gift);
+					$result['responses']['sent'][] = $r;
+				}
 			} else { // received
 				$gift = get_field( ACF_gift, $r->ID );
-				if ($gift->post_author == $request['id']) {
-					$r->gift = $gift;
-					
-					$result['responses']['received'][] = $response;
+				if ($gift && $gift->post_author == $request['id']) {
+					$r->gift = prepare_gift($gift);
+					$result['responses']['received'][] = $r;
 				}
 			}
 		}
@@ -824,6 +825,105 @@ function v3_get_responses ($request) {
 	}
 	$response->header( 'Access-Control-Allow-Origin', '*' );
 	
+	return $response;
+}
+
+function v3_setup_gift ($request) { // Unfinished
+	$result = array(
+		'success' => false
+	);
+
+	if (check_token($request['id'])) {
+		$gift = json_decode(stripslashes($request['gift']));
+
+		$giftcard_post = array(
+			'post_title'    => 'Giftcard for '.wp_strip_all_tags( $gift->post_title ),
+			'post_content'  => wp_strip_all_tags( $gift->giftcards[0]->post_content ),
+			'post_status'   => 'publish',
+			'post_author'   => $request['id'],
+			'post_type'		=> 'giftcard'
+		);
+		$giftcard_id = wp_insert_post( $giftcard_post );
+		if (is_wp_error($giftcard_id)) {
+			// delete everything in gift and stop?
+		}
+
+		foreach ($gift->payloads as $payload) {
+			$payload_post = array(
+				'post_title'    => wp_strip_all_tags( $payload->post_title ),
+				'post_content'  => wp_strip_all_tags( $payload->post_content ),
+				'post_status'   => 'publish',
+				'post_author'   => $request['id'],
+				'menu_order'	=> $payload->menu_order,
+				'post_type'		=> 'payload'
+			);
+			$payload_id = wp_insert_post( $payload_post );
+			if (is_wp_error($payload_id)) {
+				// delete everything in gift and stop?
+			}
+		}
+
+		foreach ($gift->wraps as $wrap) {
+			$wrap_post = array(
+				'post_title'    => 'Wrap '.$wrap->menu_order.' for '.wp_strip_all_tags( $gift->post_title ),
+				'post_status'   => 'publish',
+				'post_author'   => $request['id'],
+				'menu_order'	=> $wrap->menu_order,
+				'post_type'		=> 'wrap'
+			);
+			$wrap_id = wp_insert_post( $wrap_post );
+			if (!is_wp_error($wrap_id)) {
+				update_field( 'object', array($wrap->unwrap_object->ID), $wrap_id );
+			} else {
+				// delete everything in gift and stop?
+			}
+		}
+
+		$gift_post = array(
+			'post_title'    => wp_strip_all_tags( $gift->post_title ),
+			'post_status'   => 'publish',
+			'post_author'   => $request['sender'],
+			'post_type'		=> 'gift'
+		);
+		$gift_id = wp_insert_post( $gift_post );
+		if (!is_wp_error($gift_id)) {
+			$result['gift'] = $gift_id;
+			if (email_exists($gift->recipient->user_email)) {
+				$recipient = get_user_by('id', $gift->recipient->ID);
+				update_field( 'recipient', array($recipient->ID), $gift_id );
+				$result['recipient'] = $recipient->ID;
+
+				update_field( 'gift_card', $giftcard_id, $gift_id );
+
+				if (count($result['payloads']) > 0) {
+					update_field( 'payload', $result['payloads'], $gift_id );
+				}
+
+				if (count($result['wraps']) > 0) {
+					update_field( 'wrap', $result['wraps'], $gift_id );
+				}
+
+				/*require_once('lib/rest.php');
+				curl_post('https://chat.gifting.digital/api/', array(
+					'type' => '000', //types->createdGift
+					'sender' => $sender->nickname,
+					'receiver' => $gift->recipient->ID
+				));*/
+			} else {
+				$result['success'] = false;
+			}
+		} else {
+			$result['success'] = false;
+		}
+	}
+
+	$response = new WP_REST_Response( $result );
+	if ($result['success']) {
+		$response->set_status( 200 );
+	} else {
+		$response->set_status( 503 );
+	}
+	$response->header( 'Access-Control-Allow-Origin', '*' );
 	return $response;
 }
 
