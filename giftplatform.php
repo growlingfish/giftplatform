@@ -174,7 +174,6 @@ function get_gift_user ($id) {
 	$userdata = get_userdata($user->data->ID);
 
 	return array(
-		'debug'			=> array($id, $user, $userdata),
 		'ID' 			=> $user->data->ID,
 		'user_email'	=> $user->data->user_email,
 		'nickname'		=> $userdata->nickname,
@@ -210,6 +209,10 @@ function get_gift ($post) {
 		'author' => get_gift_user($post->post_author)
 	);
 
+	if (!$gift->author) {
+		return null;
+	}
+
 	$hasObject = false;
 
 	$recipients = get_field( ACF_recipient, $gift->ID );
@@ -217,7 +220,11 @@ function get_gift ($post) {
 		$gift->recipient = get_gift_user($recipient['ID']);
 		break; // only one recipient for now
 	}
-		
+	
+	if (!$gift->recipient) {
+		return null;
+	}
+	
 	$wraps = get_field( ACF_wrap, $gift->ID);
 	foreach ($wraps as $wrap) {
 		$w = (object)array(
@@ -254,30 +261,31 @@ function get_gift ($post) {
 		$gift->wraps[] = $w;
 	}
 
-	if ($hasObject) { // gift must have an object?
-		$payloads = get_field( ACF_payload, $gift->ID);
-		foreach ($payloads as $payload) {
-			$gift->payloads[] = (object)array(
-				'ID' => $payload->ID,
-				'post_content' => wpautop($payload->post_content)
-			);
-		}
-		$giftcards = get_field( ACF_giftcard, $gift->ID);
-		foreach ($giftcards as $giftcard) {
-			$gift->giftcards[] = (object)array(
-				'ID' => $giftcard->ID,
-				'post_title' => $giftcard->post_title,
-				'post_content' => wpautop($giftcard->post_content)
-			);
-		}
-		$gift->status = array(
-			'received' => get_field( ACF_received, $gift->ID),
-			'unwrapped' => get_field( ACF_unwrapped, $gift->ID),
-			'responded' => get_field( ACF_responded, $gift->ID)
-		);
-		return $gift;
+	if (!$hasObject) { // gift must have an object?
+		return null;
 	}
-	return null;
+
+	$payloads = get_field( ACF_payload, $gift->ID);
+	foreach ($payloads as $payload) {
+		$gift->payloads[] = (object)array(
+			'ID' => $payload->ID,
+			'post_content' => wpautop($payload->post_content)
+		);
+	}
+	$giftcards = get_field( ACF_giftcard, $gift->ID);
+	foreach ($giftcards as $giftcard) {
+		$gift->giftcards[] = (object)array(
+			'ID' => $giftcard->ID,
+			'post_title' => $giftcard->post_title,
+			'post_content' => wpautop($giftcard->post_content)
+		);
+	}
+	$gift->status = array(
+		'received' => get_field( ACF_received, $gift->ID),
+		'unwrapped' => get_field( ACF_unwrapped, $gift->ID),
+		'responded' => get_field( ACF_responded, $gift->ID)
+	);
+	return $gift;
 }
 
 $namespace = 'gift';
@@ -611,7 +619,10 @@ function v3_get_sent_gifts ($request) {
 		);
 		$all_gifts = get_posts( $query );
 		foreach ($all_gifts as $giftobject) {
-			$result['gifts'][] = get_gift($giftobject);
+			$gift = get_gift($giftobject);
+			if ($gift) {
+				$result['gifts'][] = $gift;
+			}
 		}
 	}
 
@@ -645,7 +656,10 @@ function v3_get_received_gifts ($request) {
 			$recipients = get_field( ACF_recipient, $giftobject->ID );
 			foreach ($recipients as $recipient) {
 				if ($recipient['ID'] == $user->ID) {
-					$result['gifts'][] = get_gift($giftobject);
+					$gift = get_gift($giftobject);
+					if ($gift) {
+						$result['gifts'][] = $gift;
+					}
 					break;
 				}
 			}
