@@ -169,7 +169,7 @@ function generate_token ($userId, $apiVersion) {
 	}	
 }
 
-function get_gift_user ($id) {
+function prepare_gift_user ($id) {
 	$user = get_user_by('ID', $id);
 	if (!$user) {
 		return null;
@@ -204,11 +204,11 @@ function check_token ($id) {
 	return false;
 }
 
-function get_gift ($post) {
+function prepare_gift ($post) {
 	$gift = (object)array(
 		'ID' => $post->ID,
 		'post_date' => $post->post_date,
-		'author' => get_gift_user($post->post_author)
+		'author' => prepare_gift_user($post->post_author)
 	);
 
 	if (!$gift->author) {
@@ -219,7 +219,7 @@ function get_gift ($post) {
 
 	$recipients = get_field( ACF_recipient, $gift->ID );
 	foreach ($recipients as $recipient) {
-		$gift->recipient = get_gift_user($recipient['ID']);
+		$gift->recipient = prepare_gift_user($recipient['ID']);
 		break; // only one recipient for now
 	}
 	
@@ -246,19 +246,10 @@ function get_gift ($post) {
 			unset($object);
 		}  
 		if ($object) {
-			$hasObject = true;
-			$location = get_field( ACF_location, $object->ID );
-			$w->unwrap_object = (object)array(
-				'ID' => $object->ID,
-				'post_author' => $object->post_author,
-				'post_title' => $object->post_title,
-				'post_image' => get_the_post_thumbnail_url($object->ID, 'large'),
-				'post_content' => wpautop($object->post_content),
-				'location' => (object)array(
-					'ID' => $location[0]->ID,
-					'post_title' => $location[0]->post_title
-				)
-			);
+			$w->unwrap_object = prepare_gift_object($object);
+			if ($w->unwrap_object) {
+				$hasObject = true;
+			}
 		}
 		$gift->wraps[] = $w;
 	}
@@ -290,6 +281,29 @@ function get_gift ($post) {
 	return $gift;
 }
 
+function prepare_gift_object ($post) {
+	$location = get_field( ACF_location, $post->ID );
+	if (!$location || count($location) == 0) {
+		return null;
+	}
+	$location = $location[0];
+	return (object)array(
+		'ID' => $post->ID,
+		'author' => prepare_gift_user($post->post_author),
+		'post_title' => $post->post_title,
+		'post_image' => get_the_post_thumbnail_url($post->ID, 'large'),
+		'post_content' => wpautop($post->post_content),
+		'location' => prepare_gift_location($location)
+	);
+}
+
+function prepare_gift_location ($post) {
+	return (object)array(
+		'ID' => $post->ID,
+		'post_title' => $post->post_title
+	);
+}
+
 $namespace = 'gift';
 
 define ( 'ACF_recipient', 	'field_58e4f6e88f3d7' );
@@ -307,6 +321,7 @@ define ( 'ACF_unwrapped', 	'field_595e0593bd980' );
 define ( 'ACF_responded', 	'field_595e05c8bd981' );
 define ( 'ACF_location', 	'field_59a85fff4be5a' );
 define ( 'ACF_gift', 		'field_59c4cdc1f07f6' );
+define ( 'ACF_owner', 		'field_5969c3853f8f2' );
 
 /*
 *	Custom API end-points: year 1 review
@@ -360,9 +375,9 @@ function gift_v3_register_api_hooks () {
 			)
 		)
 	) );
-	/*register_rest_route( $namespace.'/v'.$version, '/contacts/(?P<id>.+)/', array(
+	register_rest_route( $namespace.'/v'.$version, '/contacts/(?P<id>.+)/', array(
 		'methods'  => 'GET',
-		'callback' => 'get_contacts',
+		'callback' => 'v3_get_contacts',
 		'args' => array(
 			'id' => array(
 				'validate_callback' => function ($param, $request, $key) {
@@ -374,7 +389,7 @@ function gift_v3_register_api_hooks () {
 	) );
 	register_rest_route( $namespace.'/v'.$version, '/objects/(?P<id>.+)/', array(
 		'methods'  => 'GET',
-		'callback' => 'get_objects',
+		'callback' => 'v3_get_objects',
 		'args' => array(
 			'id' => array(
 				'validate_callback' => function ($param, $request, $key) {
@@ -386,9 +401,9 @@ function gift_v3_register_api_hooks () {
 	) );
 	register_rest_route( $namespace.'/v'.$version, '/locations/', array(
 		'methods'  => 'GET',
-		'callback' => 'get_locations'
+		'callback' => 'v3_get_locations'
 	) );
-	register_rest_route( $namespace.'/v'.$version, '/data/', array(
+	/*register_rest_route( $namespace.'/v'.$version, '/data/', array(
 		'methods'  => 'GET',
 		'callback' => 'get_data'
 	) );*/
@@ -549,7 +564,7 @@ function v3_gift_auth ($request) {
 	$user = get_user_by('login', $request['user']);
 
 	$result = array(
-		'user' => get_gift_user($user->data->ID),
+		'user' => prepare_gift_user($user->data->ID),
 		'token' => null,
 		'success' => false
 	);
@@ -566,6 +581,87 @@ function v3_gift_auth ($request) {
 	} else {
 		$response->set_status( 503 );
 	}
+	$response->header( 'Access-Control-Allow-Origin', '*' );
+	
+	return $response;
+}
+
+function v3_get_contacts ($request) {
+	$result = array(
+		'contacts' => array(),
+		'success' => false
+	);
+
+	if (check_token($request['id'])) {
+		$u = get_users( array(
+			'exclude'	=> array($request['id']),
+			'orderby'	=> 'nicename'
+		));
+		$users = array();
+		foreach ($u as $user) {
+			$result['contacts'][] = prepare_gift_user($user->data->ID);
+		}
+		
+		$result['success'] = true;
+	}
+
+	$response = new WP_REST_Response( $result );
+	if ($result['success']) {
+		$response->set_status( 200 );
+	} else {
+		$response->set_status( 400 );
+	}
+	$response->header( 'Access-Control-Allow-Origin', '*' );
+	
+	return $response;
+}
+
+function v3_get_objects ($request) {
+	$user = get_user_by('ID', $request['id']);
+
+	$result = array(
+		'success' => true,
+		'objects' => array()
+	);
+
+	$query = array(
+		'numberposts'   => -1,
+		'post_type'     => 'object',
+		'post_status'   => 'publish'
+	);
+	$all_objects = get_posts( $query );
+	foreach ($all_objects as $object) {
+		$owner = get_field( ACF_owner, $object->ID );
+		if ($owner == null || $owner['ID'] == $user->ID) { // object belongs to no-one or this user
+			$result['objects'][] = prepare_gift_object($object);
+		}
+	}
+
+	$response = new WP_REST_Response( $result );
+	$response->set_status( 200 );
+	$response->header( 'Access-Control-Allow-Origin', '*' );
+	
+	return $response;
+}
+
+function v3_get_locations ($request) {
+	$result = array(
+		'success' => true,
+		'locations' => array()
+	);
+
+	$query = array(
+		'numberposts'   => -1,
+		'post_type'     => 'location',
+		'post_status'   => 'publish'
+	);
+	$locations = get_posts( $query );
+	foreach ($locations as $location) {
+		$result['locations'][] = prepare_gift_location($location);
+	}
+
+	$response = new WP_REST_Response( $result );
+	$response->set_status( 200 );
 	$response->header( 'Access-Control-Allow-Origin', '*' );
 	
 	return $response;
@@ -592,7 +688,7 @@ function v3_setup_sender ($request) {
 		update_user_meta($id, 'display_name', $request['name']);
 		update_user_meta($id, 'nickname', $request['name']);
 
-		$result['user'] = get_gift_user($id);
+		$result['user'] = prepare_gift_user($id);
 	}
 
 	$response = new WP_REST_Response( $result );
@@ -621,7 +717,7 @@ function v3_get_sent_gifts ($request) {
 		);
 		$all_gifts = get_posts( $query );
 		foreach ($all_gifts as $giftobject) {
-			$gift = get_gift($giftobject);
+			$gift = prepare_gift($giftobject);
 			if ($gift) {
 				$result['gifts'][] = $gift;
 			}
@@ -658,7 +754,7 @@ function v3_get_received_gifts ($request) {
 			$recipients = get_field( ACF_recipient, $giftobject->ID );
 			foreach ($recipients as $recipient) {
 				if ($recipient['ID'] == $user->ID) {
-					$gift = get_gift($giftobject);
+					$gift = prepare_gift($giftobject);
 					if ($gift) {
 						$result['gifts'][] = $gift;
 					}
@@ -702,7 +798,7 @@ function v3_get_responses ($request) {
 			$r = (object)array(
 				'ID' => $response->ID,
 				'post_date' => $response->post_date,
-				'post_author' => get_gift_user($response->post_author),
+				'post_author' => prepare_gift_user($response->post_author),
 				'post_content' => $response->post_content
 			);
 			if ($response->post_author == $request['id']) { // sent
@@ -1956,7 +2052,7 @@ function gift_v1_register_api_hooks () {
 	) );
 	register_rest_route( $namespace.'/v'.$version, '/gifts/(?P<id>.+)/', array(
 		'methods'  => 'GET',
-		'callback' => 'v1_get_gifts',
+		'callback' => 'v1_prepare_gifts',
 		'args' => array(
 			'id' => array(
 				'validate_callback' => function ($param, $request, $key) {
@@ -2093,7 +2189,7 @@ function v1_gift_auth ($request) {
 	return $response;
 }
 
-function v1_get_gifts ($request) {
+function v1_prepare_gifts ($request) {
 	$user = get_user_by('ID', $request['id']);
 
 	$result = array(
