@@ -174,6 +174,7 @@ function get_gift_user ($id) {
 	$userdata = get_userdata($user->data->ID);
 
 	return array(
+		'debug'			=> array($id, $user, $userdata),
 		'ID' 			=> $user->data->ID,
 		'user_email'	=> $user->data->user_email,
 		'nickname'		=> $userdata->nickname,
