@@ -206,7 +206,7 @@ function get_gift ($post) {
 	$gift = (object)array(
 		'ID' => $post->ID,
 		'post_date' => $post->post_date,
-		'post_author' => $post->post_author
+		'author' => get_gift_user($post->post_author)
 	);
 
 	$hasObject = false;
