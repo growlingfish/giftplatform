@@ -171,8 +171,10 @@ function generate_token ($userId, $apiVersion) {
 
 function get_gift_user ($id) {
 	$user = get_user_by('ID', $id);
+	if (!$user) {
+		return null;
+	}
 	$userdata = get_userdata($user->data->ID);
-
 	return array(
 		'ID' 			=> $user->data->ID,
 		'user_email'	=> $user->data->user_email,
