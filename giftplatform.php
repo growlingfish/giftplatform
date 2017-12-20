@@ -419,9 +419,9 @@ function gift_v3_register_api_hooks () {
 			)
 		)
 	) );
-	/*register_rest_route( $namespace.'/v'.$version, '/new/receiver/(?P<email>.+)/(?P<name>.+)/(?P<from>.+)', array(
+	register_rest_route( $namespace.'/v'.$version, '/new/receiver/(?P<email>.+)/(?P<name>.+)/(?P<from>.+)', array(
 		'methods'  => 'GET',
-		'callback' => 'setup_receiver',
+		'callback' => 'v3_setup_receiver',
 		'args' => array(
 			'email' => array(
 				'validate_callback' => function ($param, $request, $key) {
@@ -439,7 +439,7 @@ function gift_v3_register_api_hooks () {
 				'required' => true
 			)
 		)
-	) );*/
+	) );
 	register_rest_route( $namespace.'/v'.$version, '/new/sender/(?P<username>.+)/(?P<pass>.+)/(?P<email>.+)/(?P<name>.+)/', array(
 		'methods'  => 'GET',
 		'callback' => 'v3_setup_sender',
@@ -464,9 +464,9 @@ function gift_v3_register_api_hooks () {
 			)
 		)
 	) );
-	/*register_rest_route( $namespace.'/v'.$version, '/new/object/', array(
+	register_rest_route( $namespace.'/v'.$version, '/new/object/(?P<owner>.+)/', array(
 		'methods'  => 'POST',
-		'callback' => 'setup_object',
+		'callback' => 'v3_setup_object',
 		'args' => array(
 			'owner' => array(
 				'validate_callback' => function ($param, $request, $key) {
@@ -481,8 +481,8 @@ function gift_v3_register_api_hooks () {
 				'required' => true
 			)
 		)
-	) );*/
-	register_rest_route( $namespace.'/v'.$version, '/new/gift/', array(
+	) );
+	register_rest_route( $namespace.'/v'.$version, '/new/gift/(?P<sender>.+)/', array(
 		'methods'  => 'POST',
 		'callback' => 'v3_setup_gift',
 		'args' => array(
@@ -633,7 +633,10 @@ function v3_get_objects ($request) {
 	foreach ($all_objects as $object) {
 		$owner = get_field( ACF_owner, $object->ID );
 		if ($owner == null || $owner['ID'] == $user->ID) { // object belongs to no-one or this user
-			$result['objects'][] = prepare_gift_object($object);
+			$o = prepare_gift_object($object);
+			if ($o) {
+				$result['objects'][] = $o;
+			}
 		}
 	}
 
@@ -887,20 +890,18 @@ function v3_setup_gift ($request) { // Unfinished
 		);
 		$gift_id = wp_insert_post( $gift_post );
 		if (!is_wp_error($gift_id)) {
-			$result['gift'] = $gift_id;
 			if (email_exists($gift->recipient->user_email)) {
 				$recipient = get_user_by('id', $gift->recipient->ID);
-				update_field( 'recipient', array($recipient->ID), $gift_id );
-				$result['recipient'] = $recipient->ID;
+				update_field( ACF_recipient, array($recipient->ID), $gift_id );
 
-				update_field( 'gift_card', $giftcard_id, $gift_id );
+				update_field( ACF_giftcard, $giftcard_id, $gift_id );
 
 				if (count($result['payloads']) > 0) {
-					update_field( 'payload', $result['payloads'], $gift_id );
+					update_field( ACF_payload, $result['payloads'], $gift_id );
 				}
 
 				if (count($result['wraps']) > 0) {
-					update_field( 'wrap', $result['wraps'], $gift_id );
+					update_field( ACF_wrap, $result['wraps'], $gift_id );
 				}
 
 				/*require_once('lib/rest.php');
@@ -909,11 +910,149 @@ function v3_setup_gift ($request) { // Unfinished
 					'sender' => $sender->nickname,
 					'receiver' => $gift->recipient->ID
 				));*/
+
+				$result['success'] = true;
 			} else {
-				$result['success'] = false;
+				// delete everything in gift and stop?
 			}
 		} else {
-			$result['success'] = false;
+			// delete everything in gift and stop?
+		}
+	}
+
+	$response = new WP_REST_Response( $result );
+	if ($result['success']) {
+		$response->set_status( 200 );
+	} else {
+		$response->set_status( 503 );
+	}
+	$response->header( 'Access-Control-Allow-Origin', '*' );
+	return $response;
+}
+
+function v3_setup_receiver ($request) {
+	$result = array(
+		'success' => false,
+		'user' => array()
+	);
+
+	if (check_token($request['id'])) {
+		$email = $request['email'];
+
+		if (email_exists($email)) {
+			$result['existing'] = get_user_by('email', $email);
+		} else {
+			require_once('lib/rest.php');
+			$random_word = curl_get('http://setgetgo.com/randomword/get.php', array('len' => 8));
+			$password = 'abcdefgh';
+			if ($random_word && is_string($random_word) && strlen($random_word) == 8) {
+				$password = $random_word;
+			} else {
+				$password = wp_generate_password( $length=8, $include_standard_special_chars=false );
+			}
+			$id = wp_create_user( $email, $password, $email );
+			update_user_meta($id, 'user_nicename', $request['name']);
+			update_user_meta($id, 'first_name', $request['name']);
+			update_user_meta($id, 'display_name', $request['name']);
+			update_user_meta($id, 'nickname', $request['name']);
+			$result['user'] = get_user_by('id', $id);
+			$result['user']->nickname = $request['name'];
+
+			$giver = get_user_by('ID', $request['from']);
+
+			/*curl_post('https://chat.gifting.digital/api/', array(
+				'type' => '001', //types->newReceiver
+				'giver' => $giver->user_email,
+				'receiver' => $email,
+				'password' => $password
+			));*/
+
+			$result['success'] = true;
+		}
+	}
+
+	$response = new WP_REST_Response( $result );
+	if ($result['success']) {
+		$response->set_status( 200 );
+	} else {
+		$response->set_status( 503 );
+	}
+	$response->header( 'Access-Control-Allow-Origin', '*' );
+	return $response;
+}
+
+function v3_setup_object ($request) { // Unfinished
+	$result = array(
+		'success' => false
+	);
+
+	if (check_token($request['id'])) {
+		$object = json_decode(stripslashes($request['object']));
+
+		$user = get_userdata( $request['owner'] );
+		if ( $user ) {
+			// Create post object
+			$my_post = array(
+				'post_title'    => wp_strip_all_tags( $object->post_title ),
+				'post_content'  => $object->post_content,
+				'post_status'   => 'publish',
+				'post_author'   => $request['owner'],
+				'post_type'		=> 'object'
+			);
+			
+			// Insert the post into the database
+			$post_id = wp_insert_post( $my_post );
+			if(!is_wp_error($post_id)){
+				// set owner to the user
+				update_field( ACF_owner, $request['owner'], $post_id ); 
+
+				// set location
+				update_field( ACF_location, $object->location->ID, $post_id ); 
+
+				$result['object'] = get_post($post_id);
+
+				// Set variables for storage, fix file filename for query strings.
+				preg_match( '/[^\?]+\.(jpe?g|jpe|gif|png)\b/i', $object->post_image, $matches );
+				if ( ! $matches ) {
+					$result['error'] = new WP_Error( 'image_sideload_failed', __( 'Invalid image URL' ) );
+				} else {
+					$file_array = array();
+					$file_array['name'] = basename( $matches[0] );
+
+					// Download file to temp location.
+					require_once ABSPATH . 'wp-admin/includes/file.php';
+					$file_array['tmp_name'] = download_url( $object->post_image );
+
+					// If error storing temporarily, return the error.
+					if ( is_wp_error( $file_array['tmp_name'] ) ) {
+						$result['error'] = $file_array['tmp_name'];
+					} else {
+						// Do the validation and storage stuff.
+						require_once ABSPATH . 'wp-admin/includes/image.php';
+						require_once ABSPATH . 'wp-admin/includes/media.php';
+						$id = media_handle_sideload( $file_array, $post_id, $request['name'] );
+
+						// If error storing permanently, unlink.
+						if ( is_wp_error( $id ) ) {
+							@unlink( $file_array['tmp_name'] );
+							$result['error'] = $id;
+						} else if (set_post_thumbnail( $post_id, $id )) {
+							$result['thumbnail'] = get_the_post_thumbnail_url($post_id, 'thumbnail');
+							$result['success'] = true;
+						}
+					}
+				}
+			} else {
+				$result['success'] = false;
+				$result['error'] = $post_id->get_error_message();
+			}
+		}
+
+		// delete the image in the uploads folder
+		unlink($object->post_image);
+
+		if (!$result['success']) {
+			// Delete failed object?
 		}
 	}
 
