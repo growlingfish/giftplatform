@@ -914,16 +914,12 @@ function v3_setup_gift ($request) { // Unfinished
 				$recipient = get_user_by('id', $gift->recipient->ID);
 				update_field( ACF_recipient, array($recipient->ID), $gift_id );
 
-				update_field( ACF_giftcard, $giftcard_id, $gift_id );
+				update_field( ACF_giftcard, array($giftcard_id), $gift_id );
 
-				if (count($payloads) > 0) {
-					update_field( ACF_payload, $payloads, $gift_id );
-				}
-
-				if (count($wraps) > 0) {
-					update_field( ACF_wrap, $wraps, $gift_id );
-				}
-
+				update_field( ACF_payload, $payloads, $gift_id );
+				
+				update_field( ACF_wrap, $wraps, $gift_id );
+				
 				/*require_once('lib/rest.php');
 				curl_post('https://chat.gifting.digital/api/', array(
 					'type' => '000', //types->createdGift
