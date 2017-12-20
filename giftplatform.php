@@ -218,6 +218,9 @@ function prepare_gift ($post) {
 	$hasObject = false;
 
 	$recipients = get_field( ACF_recipient, $gift->ID );
+	if (!$recipients) {
+		return null;
+	}
 	foreach ($recipients as $recipient) {
 		$gift->recipient = prepare_gift_user($recipient['ID']);
 		break; // only one recipient for now
@@ -228,6 +231,9 @@ function prepare_gift ($post) {
 	}
 	
 	$wraps = get_field( ACF_wrap, $gift->ID);
+	if (!$wraps) {
+		return null;
+	}
 	foreach ($wraps as $wrap) {
 		$w = (object)array(
 			'ID' => $wrap->ID
@@ -259,13 +265,20 @@ function prepare_gift ($post) {
 	}
 
 	$payloads = get_field( ACF_payload, $gift->ID);
+	if (!$payloads) {
+		return null;
+	}
 	foreach ($payloads as $payload) {
 		$gift->payloads[] = (object)array(
 			'ID' => $payload->ID,
 			'post_content' => wpautop($payload->post_content)
 		);
 	}
+
 	$giftcards = get_field( ACF_giftcard, $gift->ID);
+	if (!$giftcards) {
+		return null;
+	}
 	foreach ($giftcards as $giftcard) {
 		$gift->giftcards[] = (object)array(
 			'ID' => $giftcard->ID,
@@ -273,6 +286,7 @@ function prepare_gift ($post) {
 			'post_content' => wpautop($giftcard->post_content)
 		);
 	}
+	
 	$gift->status = array(
 		'received' => get_field( ACF_received, $gift->ID),
 		'unwrapped' => get_field( ACF_unwrapped, $gift->ID),
@@ -755,18 +769,19 @@ function v3_get_received_gifts ($request) {
 		$all_gifts = get_posts( $query );
 		foreach ($all_gifts as $giftobject) {
 			$recipients = get_field( ACF_recipient, $giftobject->ID );
-			foreach ($recipients as $recipient) {
-				if ($recipient['ID'] == $user->ID) {
-					$gift = prepare_gift($giftobject);
-					if ($gift) {
-						$result['gifts'][] = $gift;
+			if ($recipients) {
+				foreach ($recipients as $recipient) {
+					if ($recipient['ID'] == $user->ID) {
+						$gift = prepare_gift($giftobject);
+						if ($gift) {
+							$result['gifts'][] = $gift;
+						}
+						break; // one recipient per gift?
 					}
-					break;
 				}
 			}
-
-			$result['success'] = true;
 		}
+		$result['success'] = true;
 	}
 
 	$response = new WP_REST_Response( $result );
