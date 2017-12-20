@@ -286,7 +286,7 @@ function prepare_gift ($post) {
 			'post_content' => wpautop($giftcard->post_content)
 		);
 	}
-	
+
 	$gift->status = array(
 		'received' => get_field( ACF_received, $gift->ID),
 		'unwrapped' => get_field( ACF_unwrapped, $gift->ID),
@@ -866,6 +866,7 @@ function v3_setup_gift ($request) { // Unfinished
 			// delete everything in gift and stop?
 		}
 
+		$payloads = array();
 		foreach ($gift->payloads as $payload) {
 			$payload_post = array(
 				'post_title'    => wp_strip_all_tags( $payload->post_title ),
@@ -878,9 +879,12 @@ function v3_setup_gift ($request) { // Unfinished
 			$payload_id = wp_insert_post( $payload_post );
 			if (is_wp_error($payload_id)) {
 				// delete everything in gift and stop?
+			} else {
+				$payloads[] = $payload_id;
 			}
 		}
 
+		$wraps = array();
 		foreach ($gift->wraps as $wrap) {
 			$wrap_post = array(
 				'post_title'    => 'Wrap '.$wrap->menu_order.' for '.wp_strip_all_tags( $gift->post_title ),
@@ -892,6 +896,7 @@ function v3_setup_gift ($request) { // Unfinished
 			$wrap_id = wp_insert_post( $wrap_post );
 			if (!is_wp_error($wrap_id)) {
 				update_field( 'object', array($wrap->unwrap_object->ID), $wrap_id );
+				$wraps[] = $wrap_id;
 			} else {
 				// delete everything in gift and stop?
 			}
@@ -911,12 +916,12 @@ function v3_setup_gift ($request) { // Unfinished
 
 				update_field( ACF_giftcard, $giftcard_id, $gift_id );
 
-				if (count($result['payloads']) > 0) {
-					update_field( ACF_payload, $result['payloads'], $gift_id );
+				if (count($payloads) > 0) {
+					update_field( ACF_payload, $payloads, $gift_id );
 				}
 
-				if (count($result['wraps']) > 0) {
-					update_field( ACF_wrap, $result['wraps'], $gift_id );
+				if (count($wraps) > 0) {
+					update_field( ACF_wrap, $wraps, $gift_id );
 				}
 
 				/*require_once('lib/rest.php');
