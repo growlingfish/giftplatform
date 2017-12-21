@@ -408,10 +408,23 @@ function gift_v3_register_api_hooks () {
 			)
 		)
 	) );
-	register_rest_route( $namespace.'/v'.$version, '/objects/(?P<id>.+)/', array(
+	register_rest_route( $namespace.'/v'.$version, '/objects/(?P<venue>.+)/(?P<id>.+)/', array(
 		'methods'  => 'GET',
 		'callback' => 'v3_get_objects',
 		'args' => array(
+			'venue' => array(
+				'validate_callback' => function ($param, $request, $key) {
+					if (!is_numeric($param)) {
+						return false;
+					}
+					$venue = get_term_by( 'id', $param, 'venue' );
+					if ( $venue ) {
+						return true;
+					}
+					return false;
+				},
+				'required' => true
+			),
 			'id' => array(
 				'validate_callback' => function ($param, $request, $key) {
 					return is_numeric($param) && get_user_by('ID', $param);
@@ -671,11 +684,20 @@ function v3_get_objects ($request) {
 	);
 	$all_objects = get_posts( $query );
 	foreach ($all_objects as $object) {
-		$owner = get_field( ACF_owner, $object->ID );
-		if ($owner == null || $owner['ID'] == $user->ID) { // object belongs to no-one or this user
-			$o = prepare_gift_object($object);
-			if ($o) {
-				$result['objects'][] = $o;
+		$location = get_field( ACF_location, $object->ID);
+		if ($location && count($location) == 1) { // does object have a location?
+			$venues = wp_get_post_terms( $location[0]->ID, 'venue' );
+			foreach ($venues as $venue) {
+				if ($venue->term_id == $request['venue']) { // is the location in the appropriate venue?
+					$owner = get_field( ACF_owner, $object->ID );
+					if ($owner == null || $owner['ID'] == $user->ID) { // object belongs to no-one or this user
+						$o = prepare_gift_object($object);
+						if ($o) {
+							$result['objects'][] = $o;
+						}
+					}
+					break;
+				}
 			}
 		}
 	}
