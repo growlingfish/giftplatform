@@ -433,8 +433,8 @@ function gift_v3_register_api_hooks () {
 					if (!is_numeric($param)) {
 						return false;
 					}
-					$venue = term_exists( $param, 'venue' );
-					if ( $venue !== 0 && $venue !== null ) {
+					$venue = get_term_by( 'id', $param, 'venue' );
+					if ( $venue ) {
 						return true;
 					}
 					return false;
