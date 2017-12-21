@@ -902,8 +902,6 @@ function v3_get_responses ($request) {
 					$result['responses'][] = prepare_gift_response($response);
 				}
 			}
-
-			$result['responses'][] = prepare_gift_response($response);
 		}
 		$result['success'] = true;
 	}
