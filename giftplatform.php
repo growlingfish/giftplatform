@@ -620,11 +620,11 @@ function gift_v3_register_api_hooks () {
 				'required' => true
 			)
 		)
-	) );/*
+	) );
 	register_rest_route( $namespace.'/v'.$version, '/upload/object/', array(
 		'methods'  => 'POST',
-		'callback' => 'upload'
-	) );*/
+		'callback' => 'v3_upload'
+	) );
 }
 
 function v3_gift_auth ($request) {
@@ -646,7 +646,7 @@ function v3_gift_auth ($request) {
 	if ($result['success']) {
 		$response->set_status( 200 );
 	} else {
-		$response->set_status( 503 );
+		$response->set_status( 403 );
 	}
 	$response->header( 'Access-Control-Allow-Origin', '*' );
 	
@@ -676,7 +676,7 @@ function v3_get_contacts ($request) {
 	if ($result['success']) {
 		$response->set_status( 200 );
 	} else {
-		$response->set_status( 400 );
+		$response->set_status( 403 );
 	}
 	$response->header( 'Access-Control-Allow-Origin', '*' );
 	
@@ -835,7 +835,7 @@ function v3_get_sent_gifts ($request) {
 	if ($result['success']) {
 		$response->set_status( 200 );
 	} else {
-		$response->set_status( 503 );
+		$response->set_status( 403 );
 	}
 	$response->header( 'Access-Control-Allow-Origin', '*' );
 	
@@ -878,7 +878,7 @@ function v3_get_received_gifts ($request) {
 	if ($result['success']) {
 		$response->set_status( 200 );
 	} else {
-		$response->set_status( 503 );
+		$response->set_status( 403 );
 	}
 	$response->header( 'Access-Control-Allow-Origin', '*' );
 	
@@ -921,7 +921,7 @@ function v3_get_responses ($request) {
 	if ($result['success']) {
 		$response->set_status( 200 );
 	} else {
-		$response->set_status( 503 );
+		$response->set_status( 403 );
 	}
 	$response->header( 'Access-Control-Allow-Origin', '*' );
 	
@@ -1022,7 +1022,7 @@ function v3_setup_gift ($request) { // Unfinished
 	if ($result['success']) {
 		$response->set_status( 200 );
 	} else {
-		$response->set_status( 503 );
+		$response->set_status( 403 );
 	}
 	$response->header( 'Access-Control-Allow-Origin', '*' );
 	return $response;
@@ -1073,7 +1073,33 @@ function v3_setup_receiver ($request) {
 	if ($result['success']) {
 		$response->set_status( 200 );
 	} else {
-		$response->set_status( 503 );
+		$response->set_status( 403 );
+	}
+	$response->header( 'Access-Control-Allow-Origin', '*' );
+	return $response;
+}
+
+function v3_upload () {
+	$result = array(
+		'success' => false
+	);
+
+	if (check_token()) {
+		define ('SITE_ROOT', realpath(dirname(__FILE__)));
+		$target_path = SITE_ROOT . "/uploads/". basename( $_FILES['file']['name']);
+
+		if (move_uploaded_file($_FILES['file']['tmp_name'], $target_path)) {
+			$result['filename'] = basename( $_FILES['file']['name']);
+			$result['url'] = plugins_url( 'uploads/'.basename( $_FILES['file']['name']), __FILE__ );
+			$result['success'] = true;
+		}
+	}
+
+	$response = new WP_REST_Response( $result );
+	if ($result['success']) {
+		$response->set_status( 200 );
+	} else {
+		$response->set_status( 403 );
 	}
 	$response->header( 'Access-Control-Allow-Origin', '*' );
 	return $response;
@@ -1158,7 +1184,7 @@ function v3_setup_object ($request) { // Unfinished
 	if ($result['success']) {
 		$response->set_status( 200 );
 	} else {
-		$response->set_status( 503 );
+		$response->set_status( 403 );
 	}
 	$response->header( 'Access-Control-Allow-Origin', '*' );
 	return $response;
@@ -1199,7 +1225,7 @@ function v3_unwrap_gift ($request) {
 	if ($result['success']) {
 		$response->set_status( 200 );
 	} else {
-		$response->set_status( 503 );
+		$response->set_status( 403 );
 	}
 	$response->header( 'Access-Control-Allow-Origin', '*' );
 	return $response;
@@ -1236,7 +1262,7 @@ function v3_received_gift ($request) {
 	if ($result['success']) {
 		$response->set_status( 200 );
 	} else {
-		$response->set_status( 503 );
+		$response->set_status( 403 );
 	}
 	$response->header( 'Access-Control-Allow-Origin', '*' );
 	return $response;
@@ -1283,7 +1309,7 @@ function v3_respond_to_gift ($request) {
 	if ($result['success']) {
 		$response->set_status( 200 );
 	} else {
-		$response->set_status( 503 );
+		$response->set_status( 403 );
 	}
 	$response->header( 'Access-Control-Allow-Origin', '*' );
 	return $response;
