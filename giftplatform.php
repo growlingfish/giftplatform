@@ -900,11 +900,17 @@ function v3_get_responses ($request) {
 		$responses = get_posts($query);
 		foreach ($responses as $response) {
 			if ($response->post_author == $request['id']) { // my response
-				$result['responses'][] = prepare_gift_response($response);
+				$r = prepare_gift_response($response);
+				if ($r) {
+					$result['responses'][] = prepare_gift_response($response);
+				}
 			} else {
 				$gift = get_field( ACF_gift, $response->ID );
 				if ($gift->post_author == $request['id']) { // response to me
-					$result['responses'][] = prepare_gift_response($response);
+					$r = prepare_gift_response($response);
+					if ($r) {
+						$result['responses'][] = prepare_gift_response($response);
+					}
 				}
 			}
 		}
