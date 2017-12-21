@@ -3,7 +3,7 @@
  * Plugin Name:       GIFT platform plugin
  * Plugin URI:        https://github.com/growlingfish/giftplatform
  * Description:       WordPress admin and server for GIFT project digital gifting platform
- * Version:           0.1.0.7
+ * Version:           0.1.0.8
  * Author:            Ben Bedwell
  * License:           GNU General Public License v3
  * License URI:       http://www.gnu.org/licenses/gpl-3.0.html
@@ -413,9 +413,28 @@ function gift_v3_register_api_hooks () {
 			)
 		)
 	) );
-	register_rest_route( $namespace.'/v'.$version, '/locations/', array(
+	register_rest_route( $namespace.'/v'.$version, '/venues/', array(
 		'methods'  => 'GET',
-		'callback' => 'v3_get_locations'
+		'callback' => 'v3_get_venues'
+	) );
+	register_rest_route( $namespace.'/v'.$version, '/locations/(?P<venue>.+)/', array(
+		'methods'  => 'GET',
+		'callback' => 'v3_get_locations',
+		'args' => array(
+			'venue' => array(
+				'validate_callback' => function ($param, $request, $key) {
+					if (!is_numeric($param)) {
+						return false;
+					}
+					$venue = term_exists( $param, 'venue' );
+					if ( $venue !== 0 && $venue !== null ) {
+						return true;
+					}
+					return false;
+				},
+				'required' => true
+			)
+		)
 	) );
 	/*register_rest_route( $namespace.'/v'.$version, '/data/', array(
 		'methods'  => 'GET',
@@ -661,6 +680,27 @@ function v3_get_objects ($request) {
 	return $response;
 }
 
+function v3_get_venues ($request) {
+	$result = array(
+		'success' => true,
+		'venues' => array()
+	);
+
+	$venues = get_terms( array(
+		'taxonomy' => 'venue',
+		'hide_empty' => false,
+	) );
+	foreach ($venues as $venue) {
+		$result['venues'][] = prepare_gift_venue($venue);
+	}
+
+	$response = new WP_REST_Response( $result );
+	$response->set_status( 200 );
+	$response->header( 'Access-Control-Allow-Origin', '*' );
+	
+	return $response;
+}
+
 function v3_get_locations ($request) {
 	$result = array(
 		'success' => true,
@@ -670,7 +710,14 @@ function v3_get_locations ($request) {
 	$query = array(
 		'numberposts'   => -1,
 		'post_type'     => 'location',
-		'post_status'   => 'publish'
+		'post_status'   => 'publish',
+		'tax_query' => array(
+			array(
+				'taxonomy' => 'venue',
+				'field' => 'term_id',
+				'terms' => array($request['venue'])
+			)
+		)
 	);
 	$locations = get_posts( $query );
 	foreach ($locations as $location) {
