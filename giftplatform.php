@@ -325,6 +325,15 @@ function prepare_gift_location ($post) {
 	);
 }
 
+function prepare_gift_response ($post) {
+	return (object)array(
+		'ID' => $post->ID,
+		'post_date' => $post->post_date,
+		'post_author' => prepare_gift_user($post->post_author),
+		'post_content' => $post->post_content,
+	);
+}
+
 $namespace = 'gift';
 
 define ( 'ACF_recipient', 	'field_58e4f6e88f3d7' );
@@ -874,10 +883,7 @@ function v3_get_received_gifts ($request) {
 function v3_get_responses ($request) {
 	$result = array(
 		'success' => false,
-		'responses' => array(
-			'sent' => array(),
-			'received' => array()
-		)
+		'responses' => array()
 	);
 
 	if (check_token()) {
@@ -886,29 +892,11 @@ function v3_get_responses ($request) {
 			'post_type'     => 'response',
 			'post_status'   => 'publish'
 		);
-		$result['success'] = true;
 		$responses = get_posts($query);
 		foreach ($responses as $response) {
-			$r = (object)array(
-				'ID' => $response->ID,
-				'post_date' => $response->post_date,
-				'post_author' => prepare_gift_user($response->post_author),
-				'post_content' => $response->post_content
-			);
-			if ($response->post_author == $request['id']) { // sent
-				$gift = get_field( ACF_gift, $r->ID );
-				if ($gift) {
-					$r->gift = prepare_gift($gift);
-					$result['responses']['sent'][] = $r;
-				}
-			} else { // received
-				$gift = get_field( ACF_gift, $r->ID );
-				if ($gift && $gift->post_author == $request['id']) {
-					$r->gift = prepare_gift($gift);
-					$result['responses']['received'][] = $r;
-				}
-			}
+			$result['responses'][] = prepare_gift_response($response);
 		}
+		$result['success'] = true;
 	}
 
 	$response = new WP_REST_Response( $result );
