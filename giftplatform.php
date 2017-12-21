@@ -326,12 +326,17 @@ function prepare_gift_location ($post) {
 }
 
 function prepare_gift_response ($post) {
-	return (object)array(
-		'ID' => $post->ID,
-		'post_date' => $post->post_date,
-		'post_author' => prepare_gift_user($post->post_author),
-		'post_content' => $post->post_content,
-	);
+	$gift = get_field( ACF_gift, $post->ID );
+	if (get_user_by('ID', $post->post_author) && get_user_by('ID', $gift->post_author)) {
+		return (object)array(
+			'ID' => $post->ID,
+			'post_date' => $post->post_date,
+			'author' => prepare_gift_user($post->post_author),
+			'recipient' => prepare_gift_user($gift->post_author),
+			'post_content' => $post->post_content,
+		);
+	}
+	return null;
 }
 
 $namespace = 'gift';
