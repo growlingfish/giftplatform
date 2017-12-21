@@ -183,7 +183,7 @@ function prepare_gift_user ($id) {
 	);
 }
 
-function check_token ($id) {
+function check_token () {
 	$header = explode(" ", $_SERVER["HTTP_AUTHORIZATION"]);
 	if (count($header) == 2 && $header[0] == 'GiftToken') {
 		$auth = base64_decode($header[1]);
@@ -567,10 +567,10 @@ function gift_v3_register_api_hooks () {
 				'required' => true
 			)
 		)
-	) );/*
+	) );
 	register_rest_route( $namespace.'/v'.$version, '/respond/gift/(?P<id>.+)/', array(
 		'methods'  => 'POST',
-		'callback' => 'respond_to_gift',
+		'callback' => 'v3_respond_to_gift',
 		'args' => array(
 			'id' => array(
 				'validate_callback' => function ($param, $request, $key) {
@@ -582,13 +582,19 @@ function gift_v3_register_api_hooks () {
 				'required' => true
 			),
 			'sender' => array(
+				'validate_callback' => function ($param, $request, $key) {
+					return is_numeric($param) && get_user_by('ID', $param);
+				},
 				'required' => true
 			),
 			'owner' => array(
+				'validate_callback' => function ($param, $request, $key) {
+					return is_numeric($param) && get_user_by('ID', $param);
+				},
 				'required' => true
 			)
 		)
-	) );*/
+	) );
 	register_rest_route( $namespace.'/v'.$version, '/received/gift/(?P<id>.+)/(?P<recipient>.+)/', array(
 		'methods'  => 'GET',
 		'callback' => 'v3_received_gift',
@@ -645,7 +651,7 @@ function v3_get_contacts ($request) {
 		'success' => false
 	);
 
-	if (check_token($request['id'])) {
+	if (check_token()) {
 		$u = get_users( array(
 			'exclude'	=> array($request['id']),
 			'orderby'	=> 'nicename'
@@ -800,7 +806,7 @@ function v3_get_sent_gifts ($request) {
 		'gifts' => array()
 	);
 
-	if (check_token($request['id'])) {
+	if (check_token()) {
 		$result['success'] = true;
 		$query = array(
 			'numberposts'   => -1,
@@ -834,7 +840,7 @@ function v3_get_received_gifts ($request) {
 		'gifts' => array()
 	);
 
-	if (check_token($request['id'])) {
+	if (check_token()) {
 		$user = get_user_by('ID', $request['id']);
 
 		$query = array(
@@ -880,7 +886,7 @@ function v3_get_responses ($request) {
 		)
 	);
 
-	if (check_token($request['id'])) {
+	if (check_token()) {
 		$query = array(
 			'numberposts'   => -1,
 			'post_type'     => 'response',
@@ -927,7 +933,7 @@ function v3_setup_gift ($request) { // Unfinished
 		'success' => false
 	);
 
-	if (check_token($request['id'])) {
+	if (check_token()) {
 		$gift = json_decode(stripslashes($request['gift']));
 
 		$giftcard_post = array(
@@ -1028,7 +1034,7 @@ function v3_setup_receiver ($request) {
 		'user' => array()
 	);
 
-	if (check_token($request['id'])) {
+	if (check_token()) {
 		$email = $request['email'];
 
 		if (email_exists($email)) {
@@ -1078,7 +1084,7 @@ function v3_setup_object ($request) { // Unfinished
 		'success' => false
 	);
 
-	if (check_token($request['id'])) {
+	if (check_token()) {
 		$object = json_decode(stripslashes($request['object']));
 
 		$user = get_userdata( $request['owner'] );
@@ -1165,7 +1171,7 @@ function v3_unwrap_gift ($request) {
 		'success' => false
 	);
 
-	if (check_token($request['id'])) {
+	if (check_token()) {
 		update_field(ACF_unwrapped, 1, $id);
 
 		$gift = get_post($id);
@@ -1202,7 +1208,7 @@ function v3_unwrap_gift ($request) {
 function v3_received_gift ($request) {
 	$id = $request['id'];
 
-	if (check_token($request['id'])) {
+	if (check_token()) {
 		update_field(ACF_received, 1, $id);
 
 		$gift = get_post($id);
@@ -1224,6 +1230,53 @@ function v3_received_gift ($request) {
 			'title' => $gift->post_title,
 			'status' => 'received'
 		));*/
+	}
+
+	$response = new WP_REST_Response( $result );
+	if ($result['success']) {
+		$response->set_status( 200 );
+	} else {
+		$response->set_status( 503 );
+	}
+	$response->header( 'Access-Control-Allow-Origin', '*' );
+	return $response;
+}
+
+function v3_respond_to_gift ($request) {
+	$result = array(
+		'success' => false
+	);
+
+	if (check_token()) {
+		$giftId = $request['id'];
+
+		update_field('responded', 1, $giftId);
+
+		$my_response = array(
+			'post_content'  => $request['response'],
+			'post_status'   => 'publish',
+			'post_author'   => $request['sender'],
+			'post_type'		=> 'response'
+		);
+		
+		$post_id = wp_insert_post( $my_response );
+		if(!is_wp_error($post_id)){
+			update_field( 'gift', $giftId, $post_id ); //field_59c4cdc1f07f6
+
+			$result['success'] = true;
+
+			/*$userdata = get_userdata($request['sender']);
+
+			require_once('lib/rest.php');
+			curl_post('https://chat.gifting.digital/api/', array(
+				'type' => '100', //types->responseToGift
+				'response' => $request['response'],
+				'owner' => $request['owner'],
+				'sender' => $request['sender'],
+				'sender_nickname' => $userdata->nickname,
+				'status' => 'responded'
+			));*/
+		}
 	}
 
 	$response = new WP_REST_Response( $result );
