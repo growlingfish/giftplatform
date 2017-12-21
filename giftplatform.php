@@ -311,6 +311,13 @@ function prepare_gift_object ($post) {
 	);
 }
 
+function prepare_gift_venue ($term) {
+	return (object)array(
+		'ID' => $term->term_id,
+		'name' => $term->name
+	);
+}
+
 function prepare_gift_location ($post) {
 	return (object)array(
 		'ID' => $post->ID,
