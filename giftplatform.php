@@ -586,12 +586,6 @@ function gift_v3_register_api_hooks () {
 					return is_numeric($param) && get_user_by('ID', $param);
 				},
 				'required' => true
-			),
-			'owner' => array(
-				'validate_callback' => function ($param, $request, $key) {
-					return is_numeric($param) && get_user_by('ID', $param);
-				},
-				'required' => true
 			)
 		)
 	) );
@@ -1250,7 +1244,7 @@ function v3_respond_to_gift ($request) {
 	if (check_token()) {
 		$giftId = $request['id'];
 
-		update_field('responded', 1, $giftId);
+		update_field( ACF_responded, 1, $giftId);
 
 		$my_response = array(
 			'post_content'  => $request['response'],
@@ -1261,7 +1255,7 @@ function v3_respond_to_gift ($request) {
 		
 		$post_id = wp_insert_post( $my_response );
 		if(!is_wp_error($post_id)){
-			update_field( 'gift', $giftId, $post_id ); //field_59c4cdc1f07f6
+			update_field( ACF_gift, $giftId, $post_id );
 
 			$result['success'] = true;
 
