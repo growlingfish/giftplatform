@@ -19,11 +19,14 @@ function giftplatform_activate () {
 	flush_rewrite_rules();
 }
 
+// Utilities
+include_once('utilities.php');
+
 // Modifications to WordPress Dashboard
 include_once('dashboard.php');
 
-// Utilities
-include_once('utilities.php');
+// Notifications
+include_once('notifications.php');
 
 // API
 $namespace = 'gift';
