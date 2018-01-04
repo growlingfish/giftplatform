@@ -664,7 +664,7 @@ function v3_setup_gift ($request) { // Unfinished
 			);
 			$wrap_id = wp_insert_post( $wrap_post );
 			if (!is_wp_error($wrap_id)) {
-				update_field( 'object', array($wrap->unwrap_object->ID), $wrap_id );
+				update_field( ACF_object, array($wrap->unwrap_object->ID), $wrap_id );
 				$wraps[] = $wrap_id;
 			} else {
 				// delete everything in gift and stop?
