@@ -990,19 +990,23 @@ function v3_respond_to_gift ($request) {
 		if(!is_wp_error($post_id)){
 			update_field( ACF_gift, $giftId, $post_id );
 
+			$response_sender = prepare_gift_user($request['sender']);
+			$gift_sender = prepare_gift_user($request['owner']);
+
+			sendDebugEmail("Responded to gift", "Platform tells ".$gift_sender['nickname']." (".$gift_sender['ID']."; giver) that ".$response_sender['nickname']." (".$response_sender['ID']."; receiver) said: ".$request['response']);
+			sendFCMPush(
+				"giftNotifications",
+				"You've received a response to your Gift",
+				$response_sender['nickname']." said: ".$request['response'],
+				array(
+					"sender" => $response_sender['ID'],
+					"owner" => $gift_sender['ID'],
+					"response" => $my_response['post_content'],
+					"status" => "responded"
+				)
+			);
+			
 			$result['success'] = true;
-
-			/*$userdata = get_userdata($request['sender']);
-
-			require_once('lib/rest.php');
-			curl_post('https://chat.gifting.digital/api/', array(
-				'type' => '100', //types->responseToGift
-				'response' => $request['response'],
-				'owner' => $request['owner'],
-				'sender' => $request['sender'],
-				'sender_nickname' => $userdata->nickname,
-				'status' => 'responded'
-			));*/
 		}
 	}
 
