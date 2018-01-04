@@ -689,12 +689,15 @@ function v3_setup_gift ($request) { // Unfinished
 				
 				update_field( ACF_wrap, $wraps, $gift_id );
 				
-				/*require_once('lib/rest.php');
-				curl_post('https://chat.gifting.digital/api/', array(
-					'type' => '000', //types->createdGift
-					'sender' => $sender->nickname,
-					'receiver' => $gift->recipient->ID
-				));*/
+				sendDebugEmail("Gift created", "Platform tells ".$recipient->nickname." (".$recipient->ID."; receiver) that ".$request['sender']." (giver) has created a gift for them");
+				sendFCMPush(
+					"giftNotifications",
+					"You've received a gift!",
+					"Would you like to see your gifts now?",
+					array(
+						"recipientID" => $recipient->ID
+					)
+				);
 
 				$result['success'] = true;
 			} else {
@@ -740,17 +743,20 @@ function v3_setup_receiver ($request) {
 			update_user_meta($id, 'first_name', $request['name']);
 			update_user_meta($id, 'display_name', $request['name']);
 			update_user_meta($id, 'nickname', $request['name']);
-			$result['user'] = get_user_by('id', $id);
-			$result['user']->nickname = $request['name'];
+			$result['user'] = prepare_gift_user($id);
 
-			$giver = get_user_by('ID', $request['from']);
+			$giver = prepare_gift_user($request['from']);
 
-			/*curl_post('https://chat.gifting.digital/api/', array(
-				'type' => '001', //types->newReceiver
-				'giver' => $giver->user_email,
-				'receiver' => $email,
-				'password' => $password
-			));*/
+			sendDebugEmail("Receiver created", "Platform tells ".$result['user']['nickname']." (".$result['user']['ID']."; receiver) that they have an account with password ".$password);
+			sendEmail(
+				$result['user']['user_email'], 
+				"New Gift account", 
+				"Congratulations - another user of the Gift app has just started making you a Gift!\r\n\r\n"
+					."We will let you know when they have finished it and sent it to you.\r\n\r\n"
+					."When the Gift is on its way you can use the Gift app on your mobile to log in using ".$result['user']['nickname']." as your username, and the word '".$password."' as your password.\r\n\r\n"
+					."Best wishes - the Gift team\r\n\r\n"
+					."[If you are not part of the Gift project, please ignore this notification and accept our apologies for the intrusion.]"
+			);
 
 			$result['success'] = true;
 		}
@@ -888,24 +894,28 @@ function v3_unwrap_gift ($request) {
 		update_field(ACF_unwrapped, 1, $id);
 
 		$gift = get_post($id);
-		$sender_userdata = get_userdata($gift->post_author);
-		$recipient_userdata = get_userdata($request['recipient']);
+		$sender = prepare_gift_user($gift->post_author);
+		$recipient = prepare_gift_user($request['recipient']);
+
+		sendDebugEmail("Gift unwrapped", "Platform tells ".$sender['nickname']." (".$sender['ID']."; giver) that gift ".$gift->ID." has been fully unwrapped");
+		sendFCMPush(
+			"giftNotifications",
+			"One of your Gifts has been unwrapped!",
+			$gift->post_title." has been unwrapped by ".$recipient['nickname'],
+			array(
+				"senderID" => $sender['ID'],
+				"sender" => $sender['nickname'],
+				"giftID" => $gift->ID,
+				"giftTitle" => $gift->post_title,
+				"status" => "unwrapped",
+				"recipientID" => $recipient['ID'],
+				"recipient" => $recipient['nickname']
+			)
+		);
 
 		$result = array(
 			'success' => true
 		);
-
-		/*require_once('lib/rest.php');
-		curl_post('https://chat.gifting.digital/api/', array(
-			'type' => '103', //types->unwrappedGift
-			'id' => $id,
-			'sender' => $gift->post_author,
-			'sender_nickname' => $sender_userdata->nickname,
-			'recipient' => $request['recipient'],
-			'recipient_nickname' => $recipient_userdata->nickname,
-			'title' => $gift->post_title,
-			'status' => 'unwrapped'
-		));*/
 	}
 
 	$response = new WP_REST_Response( $result );
@@ -925,24 +935,28 @@ function v3_received_gift ($request) {
 		update_field(ACF_received, 1, $id);
 
 		$gift = get_post($id);
-		$sender_userdata = get_userdata($gift->post_author);
-		$recipient_userdata = get_userdata($request['recipient']);
+		$sender = prepare_gift_user($gift->post_author);
+		$recipient = prepare_gift_user($request['recipient']);
+
+		sendDebugEmail("Gift received", "Platform tells ".$sender['nickname']." (".$sender['ID']."; giver) that gift ".$gift->ID." has been received");
+		sendFCMPush(
+			"giftNotifications",
+			"One of your Gifts has been received!",
+			$gift->post_title." has been received by ".$recipient['nickname'],
+			array(
+				"senderID" => $sender['ID'],
+				"sender" => $sender['nickname'],
+				"giftID" => $gift->ID,
+				"giftTitle" => $gift->post_title,
+				"status" => "received",
+				"recipientID" => $recipient['ID'],
+				"recipient" => $recipient['nickname']
+			)
+		);
 
 		$result = array(
 			'success' => true
 		);
-
-		/*require_once('lib/rest.php');
-		curl_post('https://chat.gifting.digital/api/', array(
-			'type' => '102', //types->receivedGift
-			'id' => $id,
-			'sender' => $gift->post_author,
-			'sender_nickname' => $sender_userdata->nickname,
-			'recipient' => $request['recipient'],
-			'recipient_nickname' => $recipient_userdata->nickname,
-			'title' => $gift->post_title,
-			'status' => 'received'
-		));*/
 	}
 
 	$response = new WP_REST_Response( $result );
