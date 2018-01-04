@@ -830,7 +830,7 @@ function v3_setup_object ($request) { // Unfinished
 				update_field( ACF_owner, $request['owner'], $post_id ); 
 
 				// set location
-				update_field( ACF_location, $object->location->ID, $post_id ); 
+				update_field( ACF_location, array($object->location->ID), $post_id ); 
 
 				$result['object'] = get_post($post_id);
 
@@ -857,7 +857,7 @@ function v3_setup_object ($request) { // Unfinished
 
 						// If error storing permanently, unlink.
 						if ( is_wp_error( $id ) ) {
-							@unlink( $file_array['tmp_name'] );
+							unlink( $file_array['tmp_name'] );
 							$result['error'] = $id;
 						} else if (set_post_thumbnail( $post_id, $id )) {
 							$result['thumbnail'] = get_the_post_thumbnail_url($post_id, 'thumbnail');
@@ -872,7 +872,7 @@ function v3_setup_object ($request) { // Unfinished
 		}
 
 		// delete the image in the uploads folder
-		unlink($object->post_image);
+		//unlink($file_array['tmp_name']);
 
 		if (!$result['success']) {
 			// Delete failed object?
