@@ -1,10 +1,6 @@
 <?php
-	set_include_path(get_include_path() . PATH_SEPARATOR . 'phpseclib');
-	include_once('Net/SSH2.php');
 	require 'vendor/autoload.php';
 	use Mailgun\Mailgun;
-
-	$types = parse_ini_file('../giftplatform-common/types.ini');
 
 	if (isset ($_POST['type'])) {
 		switch ($_POST['type']) {
@@ -19,16 +15,6 @@
 							"recipientID" => $_POST['receiver']
 						)
 					);
-					/*sendEmail(
-						$_POST['receiver'], 
-						"Your Gift has arrived!", 
-						"Good news - your Gift from ".$_POST['giver']." has arrived in the Gift App for you to unwrap at the Museum.\r\n\r\n"
-							."To unwrap your gift please use the Gift Unwrap App on your mobile phone and log in using ".$_POST['receiver']." as your username. This has a number of steps that you need to complete in order to get your Gift.\r\n\r\n"
-							."We hope you like it!\r\n\r\n"
-							."[If you are not part of the Gift project, please ignore this notification and accept our apologies for the intrusion.]"
-					);*/
-					//echo doEjabberdCTLCommand('send_message', 'message nonadmin@chat.gifting.digital ben@chat.gifting.digital Debug "Platform tells receiver that a gift has been created for them"');
-					//echo doEjabberdCTLCommand('send_message', 'message nonadmin@chat.gifting.digital ben@chat.gifting.digital Debug "Platform invites receiver to a room for further notifications"');
 				}
 				break;
 			case $types['newReceiver']: // happens when user of GIFT Wrapper app adds a receiver with an email that isn't already registered
@@ -43,7 +29,6 @@
 							."Best wishes - the Gift team\r\n\r\n"
 							."[If you are not part of the Gift project, please ignore this notification and accept our apologies for the intrusion.]"
 					);
-					//echo doEjabberdCTLCommand('send_message', 'message nonadmin@chat.gifting.digital ben@chat.gifting.digital Debug "Platform tells receiver that an account has been created for them"');
 				}
 				break;
 			case $types['receivedGift']:
@@ -63,7 +48,6 @@
 							"recipient" => $_POST['recipient_nickname']
 						)
 					);
-					//echo doEjabberdCTLCommand('send_message', 'message nonadmin@chat.gifting.digital ben@chat.gifting.digital Debug "Gift received", "Platform tells (giver) that gift ".$_POST['id']." has been received"');
 				}
 				break;
 			case $types['unwrappedGift']:
@@ -83,23 +67,12 @@
 							"recipient" => $_POST['recipient_nickname']
 						)
 					);
-					//echo doEjabberdCTLCommand('send_message', 'message nonadmin@chat.gifting.digital ben@chat.gifting.digital Debug "Gift received", "Platform tells (giver) that gift ".$_POST['id']." has been fully unwrapped"');
 				}
 				break;
 			case $types['responseToGift']:
 				if (isset ($_POST['owner']) && isset ($_POST['sender'])) {
 					if (isset ($_POST['decline'])) {
 						sendDebugEmail("Declined to respond", "Platform tells ".$_POST['owner']." (giver) that ".$_POST['sender']." (receiver) did not respond to their gift");
-						/*sendEmail(
-							$_POST['giver'], 
-							"No response to your gift", 
-							"Bad news - ".$_POST['receiver']." chose not to respond to the gift that you sent them.\r\n\r\n"
-								."Maybe they're just waiting to respond to you in person.\r\n\r\n"
-								."Best wishes - the Gift project team\r\n\r\n"
-								."[If you are not part of the Gift project, please ignore this notification and accept our apologies for the intrusion.]"
-						);*/
-						//sendEmail($_POST['giver'], "No response to your gift", $_POST['receiver']." chose not to respond to your gift after they experienced it.");
-						//echo doEjabberdCTLCommand('send_message', 'message nonadmin@chat.gifting.digital ben@chat.gifting.digital Debug "Platform tells sender that receiver did not respond to their gift"');
 					} else if (isset ($_POST['response'])) {
 						sendDebugEmail("Responded to gift", "Platform tells ".$_POST['owner']." (giver) that ".$_POST['sender']." (receiver) said: ".$_POST['response']);
 						sendFCMPush(
@@ -113,16 +86,6 @@
 								"status" => $_POST['status']
 							)
 						);
-						/*sendEmail(
-							$_POST['giver'], 
-							"Incoming response to your gift", 
-							$_POST['receiver']." sent you a message in response to the gift that you sent them.\r\n\r\n"
-								."They said: ''".$_POST['responseText']."''\r\n\r\n"
-								."Best wishes - the Gift project team\r\n\r\n"
-								."[If you are not part of the Gift project, please ignore this notification and accept our apologies for the intrusion.]"
-						);*/
-						//sendEmail($_POST['giver'], "A response to your gift", $_POST['receiver']." responded to your gift with this message: ".$_POST['responseText']);
-						//echo doEjabberdCTLCommand('send_message', 'message nonadmin@chat.gifting.digital ben@chat.gifting.digital Debug "Platform tells sender that the receiver said: '.$_POST['responseText'].'"');
 					} else {
 						http_response_code(400);
 					}
@@ -139,24 +102,8 @@
 		die();
 	}
 
-	function connectToAPI () {
-		$ssh = new Net_SSH2('chat.gifting.digital');
-		$config = parse_ini_file('../../api.ini');
-		if (!$ssh->login($config['execuser'], $config['execpass'])) {
-			exit('Login Failed');
-		} else {
-			return $ssh;
-		}
-	}
-
-	function doEjabberdCTLCommand ($command, $args) {
-		$ssh = connectToAPI();
-		$string = 'sudo /usr/sbin/ejabberdctl '.$command.' '.$args;
-		return $ssh->exec($string);
-	}
-
 	function connectToMailgun () {
-		return Mailgun::create('***REMOVED***');
+		return Mailgun::create(MAILGUNAPI);
 	}
 
 	function sendEmail ($to, $subject, $text) {
@@ -203,7 +150,7 @@
 		
 		$headers = array
 		(
-			'Authorization: key=***REMOVED***',
+			'Authorization: key='.MAILGUNAUTH,
 			'Content-Type: application/json'
 		);
 
