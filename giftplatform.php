@@ -19,6 +19,9 @@ function giftplatform_activate () {
 	flush_rewrite_rules();
 }
 
+// Credentials
+include_once('cred.php');
+
 // Utilities
 include_once('utilities.php');
 

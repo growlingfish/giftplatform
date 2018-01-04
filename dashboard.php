@@ -5,7 +5,6 @@
 */
 
 function giftplatform_enqueue_admin ($hook) {
-	include('cred.php');
     wp_enqueue_script( 'google_maps', 'https://maps.googleapis.com/maps/api/js?key='.GOOGLEMAPSAPI.'&libraries=drawing', array( 'jquery' ) );
 }
 add_action( 'admin_enqueue_scripts', 'giftplatform_enqueue_admin' );
