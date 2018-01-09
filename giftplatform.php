@@ -3,7 +3,7 @@
  * Plugin Name:       GIFT platform plugin
  * Plugin URI:        https://github.com/growlingfish/giftplatform
  * Description:       WordPress admin and server for GIFT project digital gifting platform
- * Version:           0.1.0.9
+ * Version:           0.1.1.0
  * Author:            Ben Bedwell
  * License:           GNU General Public License v3
  * License URI:       http://www.gnu.org/licenses/gpl-3.0.html
@@ -50,6 +50,7 @@ define ( 'ACF_responded', 	'field_595e05c8bd981' );
 define ( 'ACF_location', 	'field_59a85fff4be5a' );
 define ( 'ACF_gift', 		'field_59c4cdc1f07f6' );
 define ( 'ACF_owner', 		'field_5969c3853f8f2' );
+define ( 'ACF_freegift', 	'field_5a54cf62fc74f' );
 
 /*
 *	Year 1 review
@@ -74,6 +75,25 @@ function gift_v3_register_api_hooks () {
 				'validate_callback' => function($param, $request, $key) {
 					$user = get_user_by('login', $request['user']);
 					return wp_check_password($request['pass'], $user->data->user_pass, $user->ID);
+				},
+				'required' => true
+			)
+		)
+	) );
+	register_rest_route( $namespace.'/v'.$version, '/gifts/free/(?P<venue>.+)/', array(
+		'methods'  => 'GET',
+		'callback' => 'v3_get_free_gift',
+		'args' => array(
+			'venue' => array(
+				'validate_callback' => function ($param, $request, $key) {
+					if (!is_numeric($param)) {
+						return false;
+					}
+					$venue = get_term_by( 'id', $param, 'venue' );
+					if ( $venue ) {
+						return true;
+					}
+					return false;
 				},
 				'required' => true
 			)
@@ -566,6 +586,41 @@ function v3_get_received_gifts ($request) {
 		}
 		$result['success'] = true;
 	}
+
+	$response = new WP_REST_Response( $result );
+	if ($result['success']) {
+		$response->set_status( 200 );
+	} else {
+		$response->set_status( 403 );
+	}
+	$response->header( 'Access-Control-Allow-Origin', '*' );
+	
+	return $response;
+}
+
+function v3_get_free_gift ($request) {
+	$result = array(
+		'success' => false,
+		'gifts' => array()
+	);
+
+	$query = array(
+		'numberposts'   => -1,
+		'post_type'     => 'gift',
+		'post_status'   => 'publish'
+	);
+	$all_gifts = get_posts( $query );
+	foreach ($all_gifts as $giftobject) {
+		$freeGift = get_field( ACF_freegift, $giftobject->ID );
+		if ($freeGift) {
+			$gift = prepare_gift($giftobject);
+			if ($gift) {
+				$result['gifts'][] = $gift;
+			}
+			break; // one free gift?
+		}
+	}
+	$result['success'] = true;
 
 	$response = new WP_REST_Response( $result );
 	if ($result['success']) {
