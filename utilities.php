@@ -215,9 +215,15 @@ function prepare_gift_venue ($term) {
 }
 
 function prepare_gift_location ($post) {
+	$venues = wp_get_post_terms( $post->ID, 'venue' );
+	$v = array();
+	foreach ($venues as $venue) {
+		$v[] = prepare_gift_venue($venue);
+	}
 	return (object)array(
 		'ID' => $post->ID,
-		'post_title' => $post->post_title
+		'post_title' => $post->post_title,
+		'venue' => $v[0] // only one venue per location?
 	);
 }
 
