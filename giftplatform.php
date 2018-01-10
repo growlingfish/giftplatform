@@ -527,19 +527,21 @@ function v3_get_sent_gifts ($request) {
 		'gifts' => array()
 	);
 
-	if ($id = check_token() && $id == $request['id']) {
-		$result['success'] = true;
-		$query = array(
-			'numberposts'   => -1,
-			'post_type'     => 'gift',
-			'post_status'   => array('draft', 'publish'),
-			'author'	   	=> $request['id']
-		);
-		$all_gifts = get_posts( $query );
-		foreach ($all_gifts as $giftobject) {
-			$gift = prepare_gift($giftobject);
-			if ($gift) {
-				$result['gifts'][] = $gift;
+	if ($id = check_token()) {
+		if ($id == $request['id']) {
+			$result['success'] = true;
+			$query = array(
+				'numberposts'   => -1,
+				'post_type'     => 'gift',
+				'post_status'   => array('draft', 'publish'),
+				'author'	   	=> $request['id']
+			);
+			$all_gifts = get_posts( $query );
+			foreach ($all_gifts as $giftobject) {
+				$gift = prepare_gift($giftobject);
+				if ($gift) {
+					$result['gifts'][] = $gift;
+				}
 			}
 		}
 	}
@@ -561,30 +563,32 @@ function v3_get_received_gifts ($request) {
 		'gifts' => array()
 	);
 
-	if ($id = check_token() && $id == $request['id']) {
-		$user = get_user_by('ID', $request['id']);
+	if ($id = check_token()) {
+		if ($id == $request['id']) {
+			$user = get_user_by('ID', $request['id']);
 
-		$query = array(
-			'numberposts'   => -1,
-			'post_type'     => 'gift',
-			'post_status'   => 'publish'
-		);
-		$all_gifts = get_posts( $query );
-		foreach ($all_gifts as $giftobject) {
-			$recipients = get_field( ACF_recipient, $giftobject->ID );
-			if ($recipients) {
-				foreach ($recipients as $recipient) {
-					if ($recipient['ID'] == $user->ID) {
-						$gift = prepare_gift($giftobject);
-						if ($gift) {
-							$result['gifts'][] = $gift;
+			$query = array(
+				'numberposts'   => -1,
+				'post_type'     => 'gift',
+				'post_status'   => 'publish'
+			);
+			$all_gifts = get_posts( $query );
+			foreach ($all_gifts as $giftobject) {
+				$recipients = get_field( ACF_recipient, $giftobject->ID );
+				if ($recipients) {
+					foreach ($recipients as $recipient) {
+						if ($recipient['ID'] == $user->ID) {
+							$gift = prepare_gift($giftobject);
+							if ($gift) {
+								$result['gifts'][] = $gift;
+							}
+							break; // one recipient per gift?
 						}
-						break; // one recipient per gift?
 					}
 				}
 			}
+			$result['success'] = true;
 		}
-		$result['success'] = true;
 	}
 
 	$response = new WP_REST_Response( $result );
@@ -639,30 +643,32 @@ function v3_get_responses ($request) {
 		'responses' => array()
 	);
 
-	if ($id = check_token() && $id == $request['id']) {
-		$query = array(
-			'numberposts'   => -1,
-			'post_type'     => 'response',
-			'post_status'   => 'publish'
-		);
-		$responses = get_posts($query);
-		foreach ($responses as $response) {
-			if ($response->post_author == $request['id']) { // my response
-				$r = prepare_gift_response($response);
-				if ($r) {
-					$result['responses'][] = prepare_gift_response($response);
-				}
-			} else {
-				$gift = get_field( ACF_gift, $response->ID );
-				if ($gift->post_author == $request['id']) { // response to me
+	if ($id = check_token()) {
+		if ($id == $request['id']) {
+			$query = array(
+				'numberposts'   => -1,
+				'post_type'     => 'response',
+				'post_status'   => 'publish'
+			);
+			$responses = get_posts($query);
+			foreach ($responses as $response) {
+				if ($response->post_author == $request['id']) { // my response
 					$r = prepare_gift_response($response);
 					if ($r) {
 						$result['responses'][] = prepare_gift_response($response);
 					}
+				} else {
+					$gift = get_field( ACF_gift, $response->ID );
+					if ($gift->post_author == $request['id']) { // response to me
+						$r = prepare_gift_response($response);
+						if ($r) {
+							$result['responses'][] = prepare_gift_response($response);
+						}
+					}
 				}
 			}
+			$result['success'] = true;
 		}
-		$result['success'] = true;
 	}
 
 	$response = new WP_REST_Response( $result );
@@ -681,91 +687,93 @@ function v3_setup_gift ($request) { // Unfinished
 		'success' => false
 	);
 
-	if ($id = check_token() && $id == $request['id']) {
-		$gift = json_decode(stripslashes($request['gift']));
+	if ($id = check_token()) {
+		if ($id == $request['id']) {
+			$gift = json_decode(stripslashes($request['gift']));
 
-		$giftcard_post = array(
-			'post_title'    => 'Giftcard for '.wp_strip_all_tags( $gift->post_title ),
-			'post_content'  => wp_strip_all_tags( $gift->giftcards[0]->post_content ),
-			'post_status'   => 'publish',
-			'post_author'   => $request['id'],
-			'post_type'		=> 'giftcard'
-		);
-		$giftcard_id = wp_insert_post( $giftcard_post );
-		if (is_wp_error($giftcard_id)) {
-			// delete everything in gift and stop?
-		}
-
-		$payloads = array();
-		foreach ($gift->payloads as $payload) {
-			$payload_post = array(
-				'post_title'    => wp_strip_all_tags( $payload->post_title ),
-				'post_content'  => wp_strip_all_tags( $payload->post_content ),
+			$giftcard_post = array(
+				'post_title'    => 'Giftcard for '.wp_strip_all_tags( $gift->post_title ),
+				'post_content'  => wp_strip_all_tags( $gift->giftcards[0]->post_content ),
 				'post_status'   => 'publish',
 				'post_author'   => $request['id'],
-				'menu_order'	=> $payload->menu_order,
-				'post_type'		=> 'payload'
+				'post_type'		=> 'giftcard'
 			);
-			$payload_id = wp_insert_post( $payload_post );
-			if (is_wp_error($payload_id)) {
-				// delete everything in gift and stop?
-			} else {
-				$payloads[] = $payload_id;
-			}
-		}
-
-		$wraps = array();
-		foreach ($gift->wraps as $wrap) {
-			$wrap_post = array(
-				'post_title'    => 'Wrap '.$wrap->menu_order.' for '.wp_strip_all_tags( $gift->post_title ),
-				'post_status'   => 'publish',
-				'post_author'   => $request['id'],
-				'menu_order'	=> $wrap->menu_order,
-				'post_type'		=> 'wrap'
-			);
-			$wrap_id = wp_insert_post( $wrap_post );
-			if (!is_wp_error($wrap_id)) {
-				update_field( ACF_object, array($wrap->unwrap_object->ID), $wrap_id );
-				$wraps[] = $wrap_id;
-			} else {
+			$giftcard_id = wp_insert_post( $giftcard_post );
+			if (is_wp_error($giftcard_id)) {
 				// delete everything in gift and stop?
 			}
-		}
 
-		$gift_post = array(
-			'post_title'    => wp_strip_all_tags( $gift->post_title ),
-			'post_status'   => 'publish',
-			'post_author'   => $request['sender'],
-			'post_type'		=> 'gift'
-		);
-		$gift_id = wp_insert_post( $gift_post );
-		if (!is_wp_error($gift_id)) {
-			if (email_exists($gift->recipient->user_email)) {
-				$recipient = get_user_by('id', $gift->recipient->ID);
-				update_field( ACF_recipient, array($recipient->ID), $gift_id );
-
-				update_field( ACF_giftcard, array($giftcard_id), $gift_id );
-
-				update_field( ACF_payload, $payloads, $gift_id );
-				
-				update_field( ACF_wrap, $wraps, $gift_id );
-				
-				sendDebugEmail("Gift created", "Platform tells ".$recipient->nickname." (".$recipient->ID."; receiver) that ".$request['sender']." (giver) has created a gift for them");
-				sendFCMPush(
-					"giftSent",
-					"You've received a gift!",
-					"Would you like to see your gifts now?",
-					array(
-						"recipientID" => $recipient->ID
-					)
+			$payloads = array();
+			foreach ($gift->payloads as $payload) {
+				$payload_post = array(
+					'post_title'    => wp_strip_all_tags( $payload->post_title ),
+					'post_content'  => wp_strip_all_tags( $payload->post_content ),
+					'post_status'   => 'publish',
+					'post_author'   => $request['id'],
+					'menu_order'	=> $payload->menu_order,
+					'post_type'		=> 'payload'
 				);
+				$payload_id = wp_insert_post( $payload_post );
+				if (is_wp_error($payload_id)) {
+					// delete everything in gift and stop?
+				} else {
+					$payloads[] = $payload_id;
+				}
+			}
 
-				$result['success'] = true;
+			$wraps = array();
+			foreach ($gift->wraps as $wrap) {
+				$wrap_post = array(
+					'post_title'    => 'Wrap '.$wrap->menu_order.' for '.wp_strip_all_tags( $gift->post_title ),
+					'post_status'   => 'publish',
+					'post_author'   => $request['id'],
+					'menu_order'	=> $wrap->menu_order,
+					'post_type'		=> 'wrap'
+				);
+				$wrap_id = wp_insert_post( $wrap_post );
+				if (!is_wp_error($wrap_id)) {
+					update_field( ACF_object, array($wrap->unwrap_object->ID), $wrap_id );
+					$wraps[] = $wrap_id;
+				} else {
+					// delete everything in gift and stop?
+				}
+			}
+
+			$gift_post = array(
+				'post_title'    => wp_strip_all_tags( $gift->post_title ),
+				'post_status'   => 'publish',
+				'post_author'   => $request['sender'],
+				'post_type'		=> 'gift'
+			);
+			$gift_id = wp_insert_post( $gift_post );
+			if (!is_wp_error($gift_id)) {
+				if (email_exists($gift->recipient->user_email)) {
+					$recipient = get_user_by('id', $gift->recipient->ID);
+					update_field( ACF_recipient, array($recipient->ID), $gift_id );
+
+					update_field( ACF_giftcard, array($giftcard_id), $gift_id );
+
+					update_field( ACF_payload, $payloads, $gift_id );
+					
+					update_field( ACF_wrap, $wraps, $gift_id );
+					
+					sendDebugEmail("Gift created", "Platform tells ".$recipient->nickname." (".$recipient->ID."; receiver) that ".$request['sender']." (giver) has created a gift for them");
+					sendFCMPush(
+						"giftSent",
+						"You've received a gift!",
+						"Would you like to see your gifts now?",
+						array(
+							"recipientID" => $recipient->ID
+						)
+					);
+
+					$result['success'] = true;
+				} else {
+					// delete everything in gift and stop?
+				}
 			} else {
 				// delete everything in gift and stop?
 			}
-		} else {
-			// delete everything in gift and stop?
 		}
 	}
 
@@ -864,73 +872,75 @@ function v3_setup_object ($request) { // Unfinished
 		'success' => false
 	);
 
-	if ($owner = check_token() && $owner == $request['owner']) {
-		$object = json_decode(stripslashes($request['object']));
+	if ($owner = check_token()) {
+		if ($owner == $request['owner']) {
+			$object = json_decode(stripslashes($request['object']));
 
-		$user = get_userdata( $request['owner'] );
-		if ( $user ) {
-			// Create post object
-			$my_post = array(
-				'post_title'    => wp_strip_all_tags( $object->post_title ),
-				'post_content'  => $object->post_content,
-				'post_status'   => 'publish',
-				'post_author'   => $request['owner'],
-				'post_type'		=> 'object'
-			);
-			
-			// Insert the post into the database
-			$post_id = wp_insert_post( $my_post );
-			if(!is_wp_error($post_id)){
-				// set owner to the user
-				update_field( ACF_owner, $request['owner'], $post_id ); 
+			$user = get_userdata( $request['owner'] );
+			if ( $user ) {
+				// Create post object
+				$my_post = array(
+					'post_title'    => wp_strip_all_tags( $object->post_title ),
+					'post_content'  => $object->post_content,
+					'post_status'   => 'publish',
+					'post_author'   => $request['owner'],
+					'post_type'		=> 'object'
+				);
+				
+				// Insert the post into the database
+				$post_id = wp_insert_post( $my_post );
+				if(!is_wp_error($post_id)){
+					// set owner to the user
+					update_field( ACF_owner, $request['owner'], $post_id ); 
 
-				// set location
-				update_field( ACF_location, array($object->location->ID), $post_id ); 
+					// set location
+					update_field( ACF_location, array($object->location->ID), $post_id ); 
 
-				$result['object'] = get_post($post_id);
+					$result['object'] = get_post($post_id);
 
-				// Set variables for storage, fix file filename for query strings.
-				preg_match( '/[^\?]+\.(jpe?g|jpe|gif|png)\b/i', $object->post_image, $matches );
-				if ( ! $matches ) {
-					$result['error'] = new WP_Error( 'image_sideload_failed', __( 'Invalid image URL' ) );
-				} else {
-					$file_array = array();
-					$file_array['name'] = basename( $matches[0] );
-
-					// Download file to temp location.
-					require_once ABSPATH . 'wp-admin/includes/file.php';
-					$file_array['tmp_name'] = download_url( $object->post_image );
-
-					// If error storing temporarily, return the error.
-					if ( is_wp_error( $file_array['tmp_name'] ) ) {
-						$result['error'] = $file_array['tmp_name'];
+					// Set variables for storage, fix file filename for query strings.
+					preg_match( '/[^\?]+\.(jpe?g|jpe|gif|png)\b/i', $object->post_image, $matches );
+					if ( ! $matches ) {
+						$result['error'] = new WP_Error( 'image_sideload_failed', __( 'Invalid image URL' ) );
 					} else {
-						// Do the validation and storage stuff.
-						require_once ABSPATH . 'wp-admin/includes/image.php';
-						require_once ABSPATH . 'wp-admin/includes/media.php';
-						$id = media_handle_sideload( $file_array, $post_id, $request['name'] );
+						$file_array = array();
+						$file_array['name'] = basename( $matches[0] );
 
-						// If error storing permanently, unlink.
-						if ( is_wp_error( $id ) ) {
-							unlink( $file_array['tmp_name'] );
-							$result['error'] = $id;
-						} else if (set_post_thumbnail( $post_id, $id )) {
-							$result['thumbnail'] = get_the_post_thumbnail_url($post_id, 'thumbnail');
-							$result['success'] = true;
+						// Download file to temp location.
+						require_once ABSPATH . 'wp-admin/includes/file.php';
+						$file_array['tmp_name'] = download_url( $object->post_image );
+
+						// If error storing temporarily, return the error.
+						if ( is_wp_error( $file_array['tmp_name'] ) ) {
+							$result['error'] = $file_array['tmp_name'];
+						} else {
+							// Do the validation and storage stuff.
+							require_once ABSPATH . 'wp-admin/includes/image.php';
+							require_once ABSPATH . 'wp-admin/includes/media.php';
+							$id = media_handle_sideload( $file_array, $post_id, $request['name'] );
+
+							// If error storing permanently, unlink.
+							if ( is_wp_error( $id ) ) {
+								unlink( $file_array['tmp_name'] );
+								$result['error'] = $id;
+							} else if (set_post_thumbnail( $post_id, $id )) {
+								$result['thumbnail'] = get_the_post_thumbnail_url($post_id, 'thumbnail');
+								$result['success'] = true;
+							}
 						}
 					}
+				} else {
+					$result['success'] = false;
+					$result['error'] = $post_id->get_error_message();
 				}
-			} else {
-				$result['success'] = false;
-				$result['error'] = $post_id->get_error_message();
 			}
-		}
 
-		// delete the image in the uploads folder
-		//unlink($file_array['tmp_name']);
+			// delete the image in the uploads folder
+			//unlink($file_array['tmp_name']);
 
-		if (!$result['success']) {
-			// Delete failed object?
+			if (!$result['success']) {
+				// Delete failed object?
+			}
 		}
 	}
 
@@ -949,32 +959,34 @@ function v3_unwrap_gift ($request) {
 		'success' => false
 	);
 
-	if ($id = check_token() && $id == $request['id']) {
-		update_field(ACF_unwrapped, 1, $id);
+	if ($id = check_token()) {
+		if ($id == $request['id']) {
+			update_field(ACF_unwrapped, 1, $id);
 
-		$gift = get_post($id);
-		$sender = prepare_gift_user($gift->post_author);
-		$recipient = prepare_gift_user($request['recipient']);
+			$gift = get_post($id);
+			$sender = prepare_gift_user($gift->post_author);
+			$recipient = prepare_gift_user($request['recipient']);
 
-		sendDebugEmail("Gift unwrapped", "Platform tells ".$sender['nickname']." (".$sender['ID']."; giver) that gift ".$gift->ID." has been fully unwrapped");
-		sendFCMPush(
-			"giftUnwrapped",
-			"One of your Gifts has been unwrapped!",
-			$gift->post_title." has been unwrapped by ".$recipient['nickname'],
-			array(
-				"senderID" => $sender['ID'],
-				"sender" => $sender['nickname'],
-				"giftID" => $gift->ID,
-				"giftTitle" => $gift->post_title,
-				"status" => "unwrapped",
-				"recipientID" => $recipient['ID'],
-				"recipient" => $recipient['nickname']
-			)
-		);
+			sendDebugEmail("Gift unwrapped", "Platform tells ".$sender['nickname']." (".$sender['ID']."; giver) that gift ".$gift->ID." has been fully unwrapped");
+			sendFCMPush(
+				"giftUnwrapped",
+				"One of your Gifts has been unwrapped!",
+				$gift->post_title." has been unwrapped by ".$recipient['nickname'],
+				array(
+					"senderID" => $sender['ID'],
+					"sender" => $sender['nickname'],
+					"giftID" => $gift->ID,
+					"giftTitle" => $gift->post_title,
+					"status" => "unwrapped",
+					"recipientID" => $recipient['ID'],
+					"recipient" => $recipient['nickname']
+				)
+			);
 
-		$result = array(
-			'success' => true
-		);
+			$result = array(
+				'success' => true
+			);
+		}
 	}
 
 	$response = new WP_REST_Response( $result );
@@ -988,32 +1000,34 @@ function v3_unwrap_gift ($request) {
 }
 
 function v3_received_gift ($request) {
-	if ($id = check_token() && $id == $request['id']) {
-		update_field(ACF_received, 1, $id);
+	if ($id = check_token()) {
+		if ($id == $request['id']) {
+			update_field(ACF_received, 1, $id);
 
-		$gift = get_post($id);
-		$sender = prepare_gift_user($gift->post_author);
-		$recipient = prepare_gift_user($request['recipient']);
+			$gift = get_post($id);
+			$sender = prepare_gift_user($gift->post_author);
+			$recipient = prepare_gift_user($request['recipient']);
 
-		sendDebugEmail("Gift received", "Platform tells ".$sender['nickname']." (".$sender['ID']."; giver) that gift ".$gift->ID." has been received");
-		sendFCMPush(
-			"giftReceived",
-			"One of your Gifts has been received!",
-			$gift->post_title." has been received by ".$recipient['nickname'],
-			array(
-				"senderID" => $sender['ID'],
-				"sender" => $sender['nickname'],
-				"giftID" => $gift->ID,
-				"giftTitle" => $gift->post_title,
-				"status" => "received",
-				"recipientID" => $recipient['ID'],
-				"recipient" => $recipient['nickname']
-			)
-		);
+			sendDebugEmail("Gift received", "Platform tells ".$sender['nickname']." (".$sender['ID']."; giver) that gift ".$gift->ID." has been received");
+			sendFCMPush(
+				"giftReceived",
+				"One of your Gifts has been received!",
+				$gift->post_title." has been received by ".$recipient['nickname'],
+				array(
+					"senderID" => $sender['ID'],
+					"sender" => $sender['nickname'],
+					"giftID" => $gift->ID,
+					"giftTitle" => $gift->post_title,
+					"status" => "received",
+					"recipientID" => $recipient['ID'],
+					"recipient" => $recipient['nickname']
+				)
+			);
 
-		$result = array(
-			'success' => true
-		);
+			$result = array(
+				'success' => true
+			);
+		}
 	}
 
 	$response = new WP_REST_Response( $result );
@@ -1031,39 +1045,41 @@ function v3_respond_to_gift ($request) {
 		'success' => false
 	);
 
-	if ($sender = check_token() && $sender == $request['sender']) {
-		$giftId = $request['id'];
+	if ($sender = check_token()) {
+		if ($sender == $request['sender']) {
+			$giftId = $request['id'];
 
-		update_field( ACF_responded, 1, $giftId);
+			update_field( ACF_responded, 1, $giftId);
 
-		$my_response = array(
-			'post_content'  => $request['response'],
-			'post_status'   => 'publish',
-			'post_author'   => $request['sender'],
-			'post_type'		=> 'response'
-		);
-		
-		$post_id = wp_insert_post( $my_response );
-		if(!is_wp_error($post_id)){
-			update_field( ACF_gift, $giftId, $post_id );
-
-			$response_sender = prepare_gift_user($request['sender']);
-			$gift_sender = prepare_gift_user($request['owner']);
-
-			sendDebugEmail("Responded to gift", "Platform tells ".$gift_sender['nickname']." (".$gift_sender['ID']."; giver) that ".$response_sender['nickname']." (".$response_sender['ID']."; receiver) said: ".$request['response']);
-			sendFCMPush(
-				"responseSent",
-				"You've received a response to your Gift",
-				$response_sender['nickname']." said: ".$request['response'],
-				array(
-					"sender" => $response_sender['ID'],
-					"owner" => $gift_sender['ID'],
-					"response" => $my_response['post_content'],
-					"status" => "responded"
-				)
+			$my_response = array(
+				'post_content'  => $request['response'],
+				'post_status'   => 'publish',
+				'post_author'   => $request['sender'],
+				'post_type'		=> 'response'
 			);
 			
-			$result['success'] = true;
+			$post_id = wp_insert_post( $my_response );
+			if(!is_wp_error($post_id)){
+				update_field( ACF_gift, $giftId, $post_id );
+
+				$response_sender = prepare_gift_user($request['sender']);
+				$gift_sender = prepare_gift_user($request['owner']);
+
+				sendDebugEmail("Responded to gift", "Platform tells ".$gift_sender['nickname']." (".$gift_sender['ID']."; giver) that ".$response_sender['nickname']." (".$response_sender['ID']."; receiver) said: ".$request['response']);
+				sendFCMPush(
+					"responseSent",
+					"You've received a response to your Gift",
+					$response_sender['nickname']." said: ".$request['response'],
+					array(
+						"sender" => $response_sender['ID'],
+						"owner" => $gift_sender['ID'],
+						"response" => $my_response['post_content'],
+						"status" => "responded"
+					)
+				);
+				
+				$result['success'] = true;
+			}
 		}
 	}
 
