@@ -3,7 +3,7 @@
  * Plugin Name:       GIFT platform plugin
  * Plugin URI:        https://github.com/growlingfish/giftplatform
  * Description:       WordPress admin and server for GIFT project digital gifting platform
- * Version:           0.1.1.0
+ * Version:           0.1.1.1
  * Author:            Ben Bedwell
  * License:           GNU General Public License v3
  * License URI:       http://www.gnu.org/licenses/gpl-3.0.html
@@ -527,7 +527,7 @@ function v3_get_sent_gifts ($request) {
 		'gifts' => array()
 	);
 
-	if (check_token()) {
+	if ($id = check_token() && $id == $request['id']) {
 		$result['success'] = true;
 		$query = array(
 			'numberposts'   => -1,
@@ -561,7 +561,7 @@ function v3_get_received_gifts ($request) {
 		'gifts' => array()
 	);
 
-	if (check_token()) {
+	if ($id = check_token() && $id == $request['id']) {
 		$user = get_user_by('ID', $request['id']);
 
 		$query = array(
@@ -639,7 +639,7 @@ function v3_get_responses ($request) {
 		'responses' => array()
 	);
 
-	if (check_token()) {
+	if ($id = check_token() && $id == $request['id']) {
 		$query = array(
 			'numberposts'   => -1,
 			'post_type'     => 'response',
@@ -681,7 +681,7 @@ function v3_setup_gift ($request) { // Unfinished
 		'success' => false
 	);
 
-	if (check_token()) {
+	if ($id = check_token() && $id == $request['id']) {
 		$gift = json_decode(stripslashes($request['gift']));
 
 		$giftcard_post = array(
@@ -864,7 +864,7 @@ function v3_setup_object ($request) { // Unfinished
 		'success' => false
 	);
 
-	if (check_token()) {
+	if ($owner = check_token() && $owner == $request['owner']) {
 		$object = json_decode(stripslashes($request['object']));
 
 		$user = get_userdata( $request['owner'] );
@@ -945,13 +945,11 @@ function v3_setup_object ($request) { // Unfinished
 }
 
 function v3_unwrap_gift ($request) {
-	$id = $request['id'];
-
 	$result = array(
 		'success' => false
 	);
 
-	if (check_token()) {
+	if ($id = check_token() && $id == $request['id']) {
 		update_field(ACF_unwrapped, 1, $id);
 
 		$gift = get_post($id);
@@ -990,9 +988,7 @@ function v3_unwrap_gift ($request) {
 }
 
 function v3_received_gift ($request) {
-	$id = $request['id'];
-
-	if (check_token()) {
+	if ($id = check_token() && $id == $request['id']) {
 		update_field(ACF_received, 1, $id);
 
 		$gift = get_post($id);
@@ -1035,7 +1031,7 @@ function v3_respond_to_gift ($request) {
 		'success' => false
 	);
 
-	if (check_token()) {
+	if ($sender = check_token() && $sender == $request['sender']) {
 		$giftId = $request['id'];
 
 		update_field( ACF_responded, 1, $giftId);

@@ -94,7 +94,10 @@ function check_token () {
 					$credentials[1]
 				)
 			);
-			return count ($validTokens) > 0;
+			if (count ($validTokens) > 0) {
+				return $credentials[0];
+			}
+			return false;
 		}
 	} 
 	return false;
