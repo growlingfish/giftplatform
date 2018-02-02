@@ -213,7 +213,8 @@ function prepare_gift_object ($post) {
 function prepare_gift_venue ($term) {
 	return (object)array(
 		'ID' => $term->term_id,
-		'name' => $term->name
+		'name' => $term->name,
+		'description' => $term->description
 	);
 }
 
