@@ -11,8 +11,6 @@
  * GitHub Plugin URI: https://github.com/growlingfish/giftplatform
  * GitHub Branch:     master
  */
-
- //sudo pip install ansible==2.3.2.0
  
 defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
 
