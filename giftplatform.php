@@ -11,6 +11,8 @@
  * GitHub Plugin URI: https://github.com/growlingfish/giftplatform
  * GitHub Branch:     master
  */
+
+ //sudo pip install ansible==2.3.2.0
  
 defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
 
@@ -1001,7 +1003,7 @@ function v3_unwrap_gift ($request) {
 
 function v3_received_gift ($request) {
 	if ($id = check_token()) {
-		if ($id == $request['id']) {
+		if ($id == $request['recipient']) {
 			update_field(ACF_received, 1, $id);
 
 			$gift = get_post($id);
