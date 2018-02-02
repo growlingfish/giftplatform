@@ -962,7 +962,7 @@ function v3_unwrap_gift ($request) {
 	);
 
 	if ($id = check_token()) {
-		if ($id == $request['id']) {
+		if ($id == $request['recipient']) {
 			update_field(ACF_unwrapped, 1, $id);
 
 			$gift = get_post($id);
