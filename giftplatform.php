@@ -619,9 +619,16 @@ function v3_get_free_gift ($request) {
 		if ($freeGift) {
 			$gift = prepare_gift($giftobject);
 			if ($gift) {
-				$result['gifts'][] = $gift;
+				foreach ($gift->wraps as $wrap) {
+					if ($wrap->unwrap_object && $wrap->unwrap_object->location->venue->ID == $request['venue']) {
+						$result['gifts'][] = $gift;
+						break;
+					}
+				}
 			}
-			break; // one free gift?
+			if (count($result['gifts']) > 0) {
+				break; // one free gift?
+			}
 		}
 	}
 	$result['success'] = true;
