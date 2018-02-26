@@ -3,7 +3,7 @@
  * Plugin Name:       GIFT platform plugin
  * Plugin URI:        https://github.com/growlingfish/giftplatform
  * Description:       WordPress admin and server for GIFT project digital gifting platform
- * Version:           0.1.1.2
+ * Version:           0.1.1.3
  * Author:            Ben Bedwell
  * License:           GNU General Public License v3
  * License URI:       http://www.gnu.org/licenses/gpl-3.0.html
@@ -823,15 +823,16 @@ function v3_setup_receiver ($request) {
 
 			$giver = prepare_gift_user($request['from']);
 
-			sendDebugEmail("Receiver created", "Platform tells ".$result['user']['nickname']." (".$result['user']['ID']."; receiver) that they have an account with password ".$password);
+			sendDebugEmail("Receiver created", "Platform tells ".$result['user']['nickname']." (".$result['user']['ID']."; receiver) that ".$giver['user_email']." created has inducted them with an account with password ".$password);
 			sendEmail(
 				$result['user']['user_email'], 
 				"New Gift account", 
-				"Congratulations - another user of the Gift app has just started making you a Gift!\r\n\r\n"
-					."We will let you know when they have finished it and sent it to you.\r\n\r\n"
-					."When the Gift is on its way you can use the Gift app on your mobile to log in using ".$result['user']['nickname']." as your username, and the word '".$password."' as your password.\r\n\r\n"
+				"Congratulations - another user of the Gift Exchange Tool app has just started making you a Gift!\r\n\r\n"
+					."A user named ".$giver['nickname']." (with the email ".$giver['user_email'].") has started creating a personalised museum experience for you."
+					."If you recognise that user and would like to receive the Gift, you can download the Gift Exchange Tool app on an Android-powered mobile phone or tablet: when ".$giver['nickname']." has finished making the Gift, you will receive a notification through the app.\r\n\r\n"
+					."To log in to the Gift Exchange Tool app, you will need to use ".$result['user']['nickname']." as your username, and the word '".$password."' as your password.\r\n\r\n"
 					."Best wishes - the Gift team\r\n\r\n"
-					."[If you are not part of the Gift project, please ignore this notification and accept our apologies for the intrusion.]"
+					."[If you do not recognise the Gift sender or are not part of the Gift project, please ignore this notification and accept our apologies for the intrusion.]"
 			);
 
 			$result['success'] = true;
