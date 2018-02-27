@@ -2,6 +2,8 @@
  
 defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
 
+define ( 'BRIGHTON_VENUE',	2 );
+
 /*
 *	Custom API end-points: second Brighton sprint
 */
@@ -620,7 +622,7 @@ function v2_get_received_gifts ($request) {
 	return $response;
 }
 
-// Update to get only objects for Brighton
+// Update to get only objects for Brighton - check
 function v2_get_objects ($request) {
 	$user = get_user_by('ID', $request['id']);
 
@@ -642,7 +644,15 @@ function v2_get_objects ($request) {
 			$object->post_image = get_the_post_thumbnail_url($object->ID, 'thumbnail');
 			$object->post_content = wpautop($object->post_content);
 			$object->location = get_field('field_59a85fff4be5a', $object->ID);
-			$result['objects'][] = $object;
+			if ($object->location && count($object->location) == 1) { // does object have a location?
+				$venues = wp_get_post_terms( $object->location[0]->ID, 'venue' );
+				foreach ($venues as $venue) {
+					if ($venue->term_id == BRIGHTON_VENUE) { // is the location in Brighton?
+						$result['objects'][] = $object;
+						break;
+					}
+				}
+			}
 		}
 	}
 
@@ -653,12 +663,19 @@ function v2_get_objects ($request) {
 	return $response;
 }
 
-// Update to get only locations for Brighton
+// Update to get only locations for Brighton - check
 function v2_get_locations ($request) {
 	$query = array(
 		'numberposts'   => -1,
 		'post_type'     => 'location',
-		'post_status'   => 'publish'
+		'post_status'   => 'publish',
+		'tax_query' => array(
+			array(
+				'taxonomy' => 'venue',
+				'field' => 'term_id',
+				'terms' => array(BRIGHTON_VENUE)
+			)
+		)
 	);
 
 	$result = array(
