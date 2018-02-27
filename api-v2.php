@@ -450,6 +450,7 @@ function v2_get_data ($request) {
 	return $response;
 }
 
+// Update to get only gifts for Brighton
 function v2_get_sent_gifts ($request) {
 	$user = get_user_by('ID', $request['id']);
 
@@ -532,6 +533,7 @@ function v2_get_sent_gifts ($request) {
 	return $response;
 }
 
+// Update to get only gifts for Brighton
 function v2_get_received_gifts ($request) {
 	$user = get_user_by('ID', $request['id']);
 
@@ -618,6 +620,7 @@ function v2_get_received_gifts ($request) {
 	return $response;
 }
 
+// Update to get only objects for Brighton
 function v2_get_objects ($request) {
 	$user = get_user_by('ID', $request['id']);
 
@@ -650,6 +653,7 @@ function v2_get_objects ($request) {
 	return $response;
 }
 
+// Update to get only locations for Brighton
 function v2_get_locations ($request) {
 	$query = array(
 		'numberposts'   => -1,
@@ -669,6 +673,7 @@ function v2_get_locations ($request) {
 	return $response;
 }
 
+// Update to get only responses to gifts for Brighton
 function v2_get_responses ($request) {
 	$query = array(
 		'numberposts'   => -1,
@@ -775,12 +780,12 @@ function v2_setup_receiver ($request) {
 
 		$giver = get_user_by('ID', $request['from']);
 
-		curl_post('https://chat.gifting.digital/api/', array(
+		/*curl_post('https://chat.gifting.digital/api/', array(
 			'type' => '001', //types->newReceiver
 			'giver' => $giver->user_email,
 			'receiver' => $email,
 			'password' => $password
-		));
+		));*/
 	}
 
 	$response = new WP_REST_Response( $result );
@@ -802,7 +807,7 @@ function v2_unwrap_gift ($request) {
 	$sender_userdata = get_userdata($gift->post_author);
 	$recipient_userdata = get_userdata($request['recipient']);
 
-	require_once('lib/rest.php');
+	/*require_once('lib/rest.php');
 	curl_post('https://chat.gifting.digital/api/', array(
 		'type' => '103', //types->unwrappedGift
 		'id' => $id,
@@ -812,7 +817,7 @@ function v2_unwrap_gift ($request) {
 		'recipient_nickname' => $recipient_userdata->nickname,
 		'title' => $gift->post_title,
 		'status' => 'unwrapped'
-	));
+	));*/
 
 	$response = new WP_REST_Response( $result );
 	$response->set_status( 200 );
@@ -844,7 +849,7 @@ function v2_respond_to_gift ($request) {
 
 		$userdata = get_userdata($request['sender']);
 
-		require_once('lib/rest.php');
+		/*require_once('lib/rest.php');
 		curl_post('https://chat.gifting.digital/api/', array(
 			'type' => '100', //types->responseToGift
 			'response' => $request['response'],
@@ -852,7 +857,7 @@ function v2_respond_to_gift ($request) {
 			'sender' => $request['sender'],
 			'sender_nickname' => $userdata->nickname,
 			'status' => 'responded'
-		));
+		));*/
 	}
 
 	$response = new WP_REST_Response( $result );
@@ -874,7 +879,7 @@ function v2_received_gift ($request) {
 	$sender_userdata = get_userdata($gift->post_author);
 	$recipient_userdata = get_userdata($request['recipient']);
 
-	require_once('lib/rest.php');
+	/*require_once('lib/rest.php');
 	curl_post('https://chat.gifting.digital/api/', array(
 		'type' => '102', //types->receivedGift
 		'id' => $id,
@@ -884,7 +889,7 @@ function v2_received_gift ($request) {
 		'recipient_nickname' => $recipient_userdata->nickname,
 		'title' => $gift->post_title,
 		'status' => 'received'
-	));
+	));*/
 
 	$response = new WP_REST_Response( $result );
 	$response->set_status( 200 );
@@ -1098,12 +1103,12 @@ function v2_setup_gift ($request) {
 						update_field( 'wrap', $result['wraps'], $gift_id );
 					}
 
-					require_once('lib/rest.php');
+					/*require_once('lib/rest.php');
 					curl_post('https://chat.gifting.digital/api/', array(
 						'type' => '000', //types->createdGift
 						'sender' => $sender->nickname,
 						'receiver' => $gift->recipient->ID
-					));
+					));*/
 				} else {
 					$result['success'] = false;
 				}
