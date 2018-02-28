@@ -308,7 +308,7 @@ function gift_v3_register_api_hooks () {
 			'response' => array(
 				'required' => true
 			),
-			'sender' => array(
+			'responder' => array(
 				'validate_callback' => function ($param, $request, $key) {
 					return is_numeric($param) && get_user_by('ID', $param);
 				},
@@ -1063,8 +1063,8 @@ function v3_respond_to_gift ($request) {
 		'success' => false
 	);
 
-	if ($sender = check_token()) {
-		if ($sender == $request['sender']) {
+	if ($responder = check_token()) {
+		if ($responder == $request['responder']) {
 			$giftId = $request['id'];
 
 			update_field( ACF_responded, 1, $giftId);
@@ -1072,7 +1072,7 @@ function v3_respond_to_gift ($request) {
 			$my_response = array(
 				'post_content'  => $request['response'],
 				'post_status'   => 'publish',
-				'post_author'   => $request['sender'],
+				'post_author'   => $request['responder'],
 				'post_type'		=> 'response'
 			);
 			
@@ -1080,8 +1080,9 @@ function v3_respond_to_gift ($request) {
 			if(!is_wp_error($post_id)){
 				update_field( ACF_gift, $giftId, $post_id );
 
-				$response_sender = prepare_gift_user($request['sender']);
-				$gift_sender = prepare_gift_user($request['owner']);
+				$gift = get_post($giftId);
+				$response_sender = prepare_gift_user($request['responder']);
+				$gift_sender = prepare_gift_user($gift->post_author);
 
 				sendDebugEmail("Responded to gift", "Platform tells ".$gift_sender['nickname']." (".$gift_sender['ID']."; giver) that ".$response_sender['nickname']." (".$response_sender['ID']."; receiver) said: ".$request['response']);
 				sendFCMPush(
