@@ -807,9 +807,19 @@ function v3_setup_receiver ($request) {
 			$result['existing'] = get_user_by('email', $email);
 		} else {
 			require_once('lib/rest.php');
-			$random_word = curl_get('http://setgetgo.com/randomword/get.php', array('len' => 8));
+			$random_word_def = json_decode(curl_get('http://api.wordnik.com:80/v4/words.json/randomWord', array(
+				'hasDictionaryDef' 		=> true,
+				'minCorpusCount'		=> 0,
+				'maxCorpusCount'		=> -1,
+				'minDictionaryCount'	=> 1,
+				'maxDictionaryCount'	=> 1,
+				'minLength'				=> 12,
+				'maxLength'				=> 12,
+				'api_key'				=> WORDNIKAPI
+			)));
+			$random_word = $random_word_def->word;
 			$password = 'abcdefgh';
-			if ($random_word && is_string($random_word) && strlen($random_word) == 8) {
+			if ($random_word && is_string($random_word) && strlen($random_word) == 12) {
 				$password = $random_word;
 			} else {
 				$password = wp_generate_password( $length=8, $include_standard_special_chars=false );

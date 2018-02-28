@@ -643,7 +643,6 @@ function v2_get_received_gifts ($request) {
 	return $response;
 }
 
-// Update to get only objects for Brighton - check
 function v2_get_objects ($request) {
 	$user = get_user_by('ID', $request['id']);
 
@@ -684,7 +683,6 @@ function v2_get_objects ($request) {
 	return $response;
 }
 
-// Update to get only locations for Brighton - check
 function v2_get_locations ($request) {
 	$query = array(
 		'numberposts'   => -1,
