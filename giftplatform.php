@@ -3,7 +3,7 @@
  * Plugin Name:       GIFT platform plugin
  * Plugin URI:        https://github.com/growlingfish/giftplatform
  * Description:       WordPress admin and server for GIFT project digital gifting platform
- * Version:           0.1.1.3
+ * Version:           0.1.1.4
  * Author:            Ben Bedwell
  * License:           GNU General Public License v3
  * License URI:       http://www.gnu.org/licenses/gpl-3.0.html
@@ -262,11 +262,11 @@ function gift_v3_register_api_hooks () {
 			)
 		)
 	) );
-	register_rest_route( $namespace.'/v'.$version, '/new/gift/(?P<sender>.+)/', array(
+	register_rest_route( $namespace.'/v'.$version, '/new/gift/(?P<id>.+)/', array(
 		'methods'  => 'POST',
 		'callback' => 'v3_setup_gift',
 		'args' => array(
-			'sender' => array(
+			'id' => array(
 				'validate_callback' => function ($param, $request, $key) {
 					return is_numeric($param) && get_user_by('ID', $param);
 				},
@@ -749,7 +749,7 @@ function v3_setup_gift ($request) { // Unfinished
 			$gift_post = array(
 				'post_title'    => wp_strip_all_tags( $gift->post_title ),
 				'post_status'   => 'publish',
-				'post_author'   => $request['sender'],
+				'post_author'   => $request['id'],
 				'post_type'		=> 'gift'
 			);
 			$gift_id = wp_insert_post( $gift_post );
@@ -764,7 +764,7 @@ function v3_setup_gift ($request) { // Unfinished
 					
 					update_field( ACF_wrap, $wraps, $gift_id );
 					
-					sendDebugEmail("Gift created", "Platform tells ".$recipient->nickname." (".$recipient->ID."; receiver) that ".$request['sender']." (giver) has created a gift for them");
+					sendDebugEmail("Gift created", "Platform tells ".$recipient->nickname." (".$recipient->ID."; receiver) that ".$request['id']." (giver) has created a gift for them");
 					sendFCMPush(
 						"giftSent",
 						"You've received a gift!",
@@ -977,11 +977,11 @@ function v3_unwrap_gift ($request) {
 		'success' => false
 	);
 
-	if ($id = check_token()) {
-		if ($id == $request['recipient']) {
-			update_field(ACF_unwrapped, 1, $id);
+	if ($recipient = check_token()) {
+		if ($recipient == $request['recipient']) {
+			update_field(ACF_unwrapped, 1, $request['id']);
 
-			$gift = get_post($id);
+			$gift = get_post($request['id']);
 			$sender = prepare_gift_user($gift->post_author);
 			$recipient = prepare_gift_user($request['recipient']);
 
@@ -1018,11 +1018,11 @@ function v3_unwrap_gift ($request) {
 }
 
 function v3_received_gift ($request) {
-	if ($id = check_token()) {
-		if ($id == $request['recipient']) {
-			update_field(ACF_received, 1, $id);
+	if ($recipient = check_token()) {
+		if ($recipient == $request['recipient']) {
+			update_field(ACF_received, 1, $request['id']);
 
-			$gift = get_post($id);
+			$gift = get_post($request['id']);
 			$sender = prepare_gift_user($gift->post_author);
 			$recipient = prepare_gift_user($request['recipient']);
 
