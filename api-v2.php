@@ -452,7 +452,7 @@ function v2_get_data ($request) {
 	return $response;
 }
 
-// Update to get only gifts for Brighton
+// Update to get only gifts for Brighton - check
 function v2_get_sent_gifts ($request) {
 	$user = get_user_by('ID', $request['id']);
 
@@ -500,6 +500,17 @@ function v2_get_sent_gifts ($request) {
 					$hasObject = true;
 					$wrap->unwrap_object->post_image = get_the_post_thumbnail_url($wrap->unwrap_object->ID, 'large');
 					$wrap->unwrap_object->post_content = wpautop($wrap->unwrap_object->post_content);
+					$wrap->unwrap_object->location = get_field('field_59a85fff4be5a', $wrap->unwrap_object->ID);
+					if ($wrap->unwrap_object->location && count($wrap->unwrap_object->location) == 1) { // does object have a location?
+						$venues = wp_get_post_terms( $wrap->unwrap_object->location[0]->ID, 'venue' );
+						foreach ($venues as $venue) {
+							if ($venue->term_id != BRIGHTON_VENUE) { // is the location in Brighton?
+								unset($wrap->unwrap_object);
+								$hasObject = false;
+								break;
+							}
+						}
+					}
 				}
 			}
 
@@ -535,7 +546,7 @@ function v2_get_sent_gifts ($request) {
 	return $response;
 }
 
-// Update to get only gifts for Brighton
+// Update to get only gifts for Brighton - check
 function v2_get_received_gifts ($request) {
 	$user = get_user_by('ID', $request['id']);
 
@@ -586,6 +597,16 @@ function v2_get_received_gifts ($request) {
 						$wrap->unwrap_object->post_image = get_the_post_thumbnail_url($wrap->unwrap_object->ID, 'large');
 						$wrap->unwrap_object->post_content = wpautop($wrap->unwrap_object->post_content);
 						$wrap->unwrap_object->location = get_field('field_59a85fff4be5a', $wrap->unwrap_object->ID);
+						if ($wrap->unwrap_object->location && count($wrap->unwrap_object->location) == 1) { // does object have a location?
+							$venues = wp_get_post_terms( $wrap->unwrap_object->location[0]->ID, 'venue' );
+							foreach ($venues as $venue) {
+								if ($venue->term_id != BRIGHTON_VENUE) { // is the location in Brighton?
+									unset($wrap->unwrap_object);
+									$hasObject = false;
+									break;
+								}
+							}
+						}
 					}
 				}
 
@@ -690,7 +711,7 @@ function v2_get_locations ($request) {
 	return $response;
 }
 
-// Update to get only responses to gifts for Brighton
+// Update to get only responses to gifts for Brighton - check
 function v2_get_responses ($request) {
 	$query = array(
 		'numberposts'   => -1,
@@ -710,20 +731,78 @@ function v2_get_responses ($request) {
 	foreach ($responses as $response) {
 		if ($response->post_author == $request['id']) {
 			$response->gift = get_field( 'field_59c4cdc1f07f6', $response->ID );
-			$response->post_author_data = array(
-				"nickname" 	=> get_userdata($response->post_author)->nickname,
-				"avatar" 	=> get_avatar_url( $response->post_author, 32 )
-			);
-			$result['responses']['sent'][] = $response;
-		} else {
-			$gift = get_field( 'field_59c4cdc1f07f6', $response->ID );
-			if ($gift->post_author == $request['id']) {
-				$response->gift = $gift;
+			$wraps = get_field('field_58e4f5da816ac', $response->gift->ID);
+			$hasObject = false;
+			foreach ($wraps as &$wrap) {
+				//$wrap->unwrap_object = get_field('object', $wrap->ID);
+				$wrap->unwrap_object = get_field('field_595b4a2bc9c1c', $wrap->ID);
+				if (is_array($wrap->unwrap_object) && count($wrap->unwrap_object) > 0) {
+					$wrap->unwrap_object = $wrap->unwrap_object[0];
+				} else if (is_a($wrap->unwrap_object, 'WP_Post')) {
+						
+				} else {
+					unset($wrap->unwrap_object);
+				}  
+				if ($wrap->unwrap_object) {
+					$hasObject = true;
+					$wrap->unwrap_object->location = get_field('field_59a85fff4be5a', $wrap->unwrap_object->ID);
+					if ($wrap->unwrap_object->location && count($wrap->unwrap_object->location) == 1) { // does object have a location?
+						$venues = wp_get_post_terms( $wrap->unwrap_object->location[0]->ID, 'venue' );
+						foreach ($venues as $venue) {
+							if ($venue->term_id != BRIGHTON_VENUE) { // is the location in Brighton?
+								unset($wrap->unwrap_object);
+								$hasObject = false;
+								break;
+							}
+						}
+					}
+				}
+			}
+			if ($hasObject) {
 				$response->post_author_data = array(
 					"nickname" 	=> get_userdata($response->post_author)->nickname,
 					"avatar" 	=> get_avatar_url( $response->post_author, 32 )
 				);
-				$result['responses']['received'][] = $response;
+				$result['responses']['sent'][] = $response;
+			}
+		} else {
+			$gift = get_field( 'field_59c4cdc1f07f6', $response->ID );
+			if ($gift->post_author == $request['id']) {
+				$response->gift = $gift;
+				$wraps = get_field('field_58e4f5da816ac', $response->gift->ID);
+				$hasObject = false;
+				foreach ($wraps as &$wrap) {
+					//$wrap->unwrap_object = get_field('object', $wrap->ID);
+					$wrap->unwrap_object = get_field('field_595b4a2bc9c1c', $wrap->ID);
+					if (is_array($wrap->unwrap_object) && count($wrap->unwrap_object) > 0) {
+						$wrap->unwrap_object = $wrap->unwrap_object[0];
+					} else if (is_a($wrap->unwrap_object, 'WP_Post')) {
+							
+					} else {
+						unset($wrap->unwrap_object);
+					}  
+					if ($wrap->unwrap_object) {
+						$hasObject = true;
+						$wrap->unwrap_object->location = get_field('field_59a85fff4be5a', $wrap->unwrap_object->ID);
+						if ($wrap->unwrap_object->location && count($wrap->unwrap_object->location) == 1) { // does object have a location?
+							$venues = wp_get_post_terms( $wrap->unwrap_object->location[0]->ID, 'venue' );
+							foreach ($venues as $venue) {
+								if ($venue->term_id != BRIGHTON_VENUE) { // is the location in Brighton?
+									unset($wrap->unwrap_object);
+									$hasObject = false;
+									break;
+								}
+							}
+						}
+					}
+				}
+				if ($hasObject) {
+					$response->post_author_data = array(
+						"nickname" 	=> get_userdata($response->post_author)->nickname,
+						"avatar" 	=> get_avatar_url( $response->post_author, 32 )
+					);
+					$result['responses']['received'][] = $response;
+				}
 			}
 		}
 	}
