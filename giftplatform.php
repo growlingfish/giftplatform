@@ -340,7 +340,7 @@ function gift_v3_register_api_hooks () {
 	) );
 	register_rest_route( $namespace.'/v'.$version, '/upload/audio/', array(
 		'methods'  => 'POST',
-		'callback' => 'v3_upload'
+		'callback' => 'v3_upload_audio'
 	) );
 }
 
@@ -962,6 +962,59 @@ function v3_setup_object ($request) { // Unfinished
 
 			if (!$result['success']) {
 				// Delete failed object?
+			}
+		}
+	}
+
+	$response = new WP_REST_Response( $result );
+	if ($result['success']) {
+		$response->set_status( 200 );
+	} else {
+		$response->set_status( 403 );
+	}
+	$response->header( 'Access-Control-Allow-Origin', '*' );
+	return $response;
+}
+
+function v3_upload_audio () {
+	$result = array(
+		'success' => false
+	);
+
+	if (check_token()) {
+		define ('SITE_ROOT', realpath(dirname(__FILE__)));
+		$target_path = SITE_ROOT . "/uploads/". basename( $_FILES['file']['name']);
+
+		if (move_uploaded_file($_FILES['file']['tmp_name'], $target_path)) {
+			$file_array = array();
+
+			$file_array['name'] = basename( $_FILES['file']['name']);
+			$result['filename'] = $file_array['name'];
+			$file_array['url'] = plugins_url( 'uploads/'.basename( $_FILES['file']['name']), __FILE__ );
+
+			//$file_array['name'] = basename( $matches[0] );
+
+			// Download file to temp location.
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+			$file_array['tmp_name'] = download_url( $file_array['url'] );
+
+			// If error storing temporarily, return the error.
+			if ( is_wp_error( $file_array['tmp_name'] ) ) {
+				$result['error'] = $file_array['tmp_name'];
+			} else {
+				// Do the validation and storage stuff.
+				//require_once ABSPATH . 'wp-admin/includes/image.php';
+				require_once ABSPATH . 'wp-admin/includes/media.php';
+				$id = media_handle_sideload( $file_array, 0, $file_array['name'] );
+
+				// If error storing permanently, unlink.
+				if ( is_wp_error( $id ) ) {
+					unlink( $file_array['tmp_name'] );
+					$result['error'] = $id;
+				} else {
+					$result['success'] = true;
+					$result['url'] = wp_get_attachment_url( $id );
+				}
 			}
 		}
 	}
