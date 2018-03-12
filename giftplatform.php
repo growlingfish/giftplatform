@@ -1003,7 +1003,7 @@ function v3_upload_audio () {
 				$result['error'] = $file_array['tmp_name'];
 			} else {
 				// Do the validation and storage stuff.
-				//require_once ABSPATH . 'wp-admin/includes/image.php';
+				require_once ABSPATH . 'wp-admin/includes/image.php';
 				require_once ABSPATH . 'wp-admin/includes/media.php';
 				$id = media_handle_sideload( $file_array, 0, $file_array['name'] );
 
