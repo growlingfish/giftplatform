@@ -75,7 +75,8 @@ function prepare_gift_user ($id) {
 		'ID' 			=> $user->data->ID,
 		'user_email'	=> $user->data->user_email,
 		'nickname'		=> $userdata->nickname,
-		'gravatar'		=> get_avatar_url( $user->data->ID, 32 )
+		'gravatar'		=> get_avatar_url( $user->data->ID, 32 ),
+		'registered'	=> $userdata->user_registered
 	);
 }
 
