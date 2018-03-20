@@ -770,7 +770,7 @@ function v3_setup_gift ($request) { // Unfinished
 					
 					sendDebugEmail("Gift created", "Platform tells ".$recipient->nickname." (".$recipient->ID."; receiver) that ".$request['id']." (giver) has created a gift for them");
 					sendFCMPush(
-						"giftSent",
+						"giftSent.".$recipient->ID,
 						"You've received a gift!",
 						"Would you like to see your gifts now?",
 						array(
@@ -1044,7 +1044,7 @@ function v3_unwrap_gift ($request) {
 
 			sendDebugEmail("Gift unwrapped", "Platform tells ".$sender['nickname']." (".$sender['ID']."; giver) that gift ".$gift->ID." has been fully unwrapped");
 			sendFCMPush(
-				"giftUnwrapped",
+				"giftUnwrapped.".$sender['ID'],
 				"One of your Gifts has been unwrapped!",
 				$gift->post_title." has been unwrapped by ".$recipient['nickname'],
 				array(
@@ -1085,7 +1085,7 @@ function v3_received_gift ($request) {
 
 			sendDebugEmail("Gift received", "Platform tells ".$sender['nickname']." (".$sender['ID']."; giver) that gift ".$gift->ID." has been received");
 			sendFCMPush(
-				"giftReceived",
+				"giftReceived.".$sender['ID'],
 				"One of your Gifts has been received!",
 				$gift->post_title." has been received by ".$recipient['nickname'],
 				array(
@@ -1143,7 +1143,7 @@ function v3_respond_to_gift ($request) {
 
 				sendDebugEmail("Responded to gift", "Platform tells ".$gift_sender['nickname']." (".$gift_sender['ID']."; giver) that ".$response_sender['nickname']." (".$response_sender['ID']."; receiver) said: ".$request['response']);
 				sendFCMPush(
-					"responseSent",
+					"responseSent.".$gift_sender['ID'],
 					"You've received a response to your Gift",
 					$response_sender['nickname']." said: ".$request['response'],
 					array(
