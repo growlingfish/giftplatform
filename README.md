@@ -20,3 +20,7 @@ After the plugin is installed, create a file name cred.php in the plugin's folde
 	define("WORDNIKAPI", "your wordnik api key");
 ?>
 ```
+
+## The GIFT project
+
+GIFT is a [research project funded by Horizon 2020](https://gift.itu.dk/), exploring hybrid forms of virtual museum experiences. The project brings together artists, designers, museum professionals and computer scientists to help museums create personal encounters with cultural heritage, both in physical and digital realms.
